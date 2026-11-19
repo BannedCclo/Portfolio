@@ -19,7 +19,7 @@
   font-family: var(--font-body, inherit);
   /* a seção de contato acaba sobre o canvas 3D; a hairline marca onde o
      documento volta a ser fundo sólido */
-  border-top: 1px solid var(--hairline, rgba(236, 232, 223, 0.12));
+  border-top: 1px solid var(--hairline, rgba(241, 241, 241, 0.12));
 }
 
 /* O logo aqui é o SVG animado da marca (components/animatedLogo) — um bloco
@@ -121,6 +121,9 @@
 .contactLink {
   color: var(--ink, #fff);
   text-align: end;
+  /* a célula do grid estica o <a> pela coluna inteira — sem isso o
+     sublinhado do hover atravessa a coluna em vez de ficar só sob o texto */
+  justify-self: end;
   /* endereços longos (o e-mail) quebram em vez de esticar a coluna */
   overflow-wrap: anywhere;
   border-bottom: 1px solid transparent;
@@ -131,8 +134,8 @@
 
 .contactLink:hover,
 .contactLink:focus-visible {
-  color: var(--copper, #fff);
-  border-bottom-color: var(--copper, #fff);
+  color: var(--gold, #fff);
+  border-bottom-color: var(--gold, #fff);
 }
 
 @media (max-width: 768px) {
@@ -159,5 +162,6 @@
 
   .contactLink {
     text-align: start;
+    justify-self: start;
   }
 }

@@ -16,6 +16,10 @@ html {
 }
 
 body {
+  font-variant-numeric: tabular-nums;
+  /* DM Serif Display só tem peso 400: sem isso o browser inventa um negrito
+     borrado onde o CSS pede 600+ */
+  font-synthesis: none;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
@@ -24,8 +28,32 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* texto em dourado metálico — gradiente recortado no formato das letras.
+   text-shadow pintaria POR CIMA do gradiente (o texto fica transparente),
+   então a sombra de legibilidade vira drop-shadow. */
+.gold-metal-text,
+.brain-title em,
+.tenet__text em,
+.contact__title em,
+.proj__index,
+.tl__institution {
+  background-image: var(--gold-metal);
+  background-size: 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  /* halo bem discreto para o dourado não sumir sobre fundo claro (o cérebro
+     iluminado atrás do hero): um contorno escuro curto dá a separação, e um
+     brilho dourado fraco e largo mantém o ar de metal sem virar "neon" */
+  filter: drop-shadow(0 0 1px rgba(7, 7, 7, 0.55))
+    drop-shadow(0 0 5px rgba(7, 7, 7, 0.45))
+    drop-shadow(0 0 12px rgba(201, 173, 114, 0.18));
+}
+
 ::selection {
-  background: var(--copper);
+  background: var(--gold);
   color: var(--bg);
 }
 
@@ -40,7 +68,7 @@ img {
 }
 
 :focus-visible {
-  outline: 2px solid var(--copper);
+  outline: 2px solid var(--gold);
   outline-offset: 3px;
 }
 
@@ -71,6 +99,17 @@ img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* a corrente de partículas do cérebro (three/beamOverlay.js): por cima das
+   seções, para passar na frente da foto e entrar na cabeça pela borda */
+.beam-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-beam);
+  pointer-events: none;
 }
 
 /* every content section floats above the stage */
@@ -171,7 +210,7 @@ img {
   display: block;
   width: 100%;
   height: calc(var(--read, 0) * 100%);
-  background: linear-gradient(to bottom, var(--copper), var(--cyan));
+  background: linear-gradient(to bottom, var(--gold-lo), var(--gold), var(--gold-hi));
   transform-origin: top;
 }
 /* the work gallery has its own horizontal progress rail; two meters at once
@@ -207,7 +246,7 @@ section.block {
   font-size: var(--fs-2);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--copper);
+  color: var(--gold);
   display: flex;
   align-items: baseline;
   gap: var(--sp-3);
@@ -220,7 +259,7 @@ section.block {
 .block__title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-style: italic;
+  font-style: normal;
   font-size: var(--fs-6);
   line-height: 1.15;
   margin-top: var(--sp-2);
@@ -257,8 +296,8 @@ section.block {
   border-bottom: 1px solid var(--hairline);
 }
 .model-credit a:hover {
-  border-color: var(--copper);
-  color: var(--copper);
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 /* ---------- generic scroll reveal ---------- */

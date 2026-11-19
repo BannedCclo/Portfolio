@@ -47,7 +47,7 @@ export function initFinale() {
       // running across it. It also has to sit behind a headline, and a pale
       // surface there would simply eat the type.
       const darkMat = tissueMat.clone();
-      darkMat.color = new THREE.Color(0x241f1d);
+      darkMat.color = new THREE.Color(0x1a1a1a);
       darkMat.roughness = 0.95;
       darkMat.clearcoat = 0;
       darkMat.sheen = 0;

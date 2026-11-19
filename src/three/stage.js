@@ -139,29 +139,29 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 // HERO_BG) are responsible for restoring PAGE_BG themselves on deactivate —
 // see acts/hero.js — otherwise a stale tint lingers, invisible while the
 // canvas is hidden, until the next act reveals it as a sudden colour jump.
-export const PAGE_BG = 0x0a0a0d;
+export const PAGE_BG = 0x070707;
 
 export const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1e1a1c);
-scene.fog = new THREE.Fog(0x1e1a1c, 8, 20);
+scene.background = new THREE.Color(0x121212);
+scene.fog = new THREE.Fog(0x121212, 8, 20);
 
 export const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
 
-const hemi = new THREE.HemisphereLight(0xfff2e6, 0x201a1c, 0.5);
+const hemi = new THREE.HemisphereLight(0xffffff, 0x141414, 0.5);
 scene.add(hemi);
 
-const keyLight = new THREE.DirectionalLight(0xfff4e8, 1.3);
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
 keyLight.position.set(4, 6, 5);
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0xd98f5f, 1.0);
+const rimLight = new THREE.DirectionalLight(0xd4af37, 1.0);
 rimLight.position.set(-5, 1, -4);
 scene.add(rimLight);
 
-const fillLight = new THREE.DirectionalLight(0x6f97a3, 0.6);
+const fillLight = new THREE.DirectionalLight(0x8c8c8c, 0.6);
 fillLight.position.set(-3, -4, 3);
 scene.add(fillLight);
 
@@ -243,7 +243,7 @@ starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
 export const stars = new THREE.Points(
   starGeo,
   new THREE.PointsMaterial({
-    color: 0x8b8891,
+    color: 0x8a8a8a,
     size: 0.018,
     transparent: true,
     opacity: 0.35,

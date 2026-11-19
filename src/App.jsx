@@ -78,7 +78,7 @@ export default function App() {
       <Contact />
       {/* O logo do footer é a versão horizontal de traço claro (Assets/Logo →
           dark/horizontal): é a forma que cabe numa faixa larga e centrada como
-          a do topo do footer, e o traço #ECE8DF é o próprio --ink do site. Ela
+          a do topo do footer, e o traço #F1F1F1 é o próprio --ink do site. Ela
           se desenha ao entrar na viewport — ver components/animatedLogo. */}
       <Footer logo={<AnimatedLogo lang={lang} />} backgroundColor="var(--bg)">
         <RandomProjectButton />

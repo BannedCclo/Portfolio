@@ -27,7 +27,7 @@
   font-size: var(--fs-1);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--copper);
+  color: var(--gold);
   padding-bottom: var(--sp-3);
   border-bottom: 1px solid var(--hairline-strong);
   margin-bottom: var(--sp-4);
@@ -70,7 +70,7 @@
 }
 .stack__group li:hover::before {
   width: 12px;
-  background: var(--copper);
+  background: var(--gold-metal);
 }
 
 .stack.is-revealed .stack__group li {

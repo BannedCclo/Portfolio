@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { initAbout } from "../lib/sections/about.js";
 import { useLanguage } from "../lib/i18n/LanguageContext.jsx";
-import retrato from "../assets/eu/retrato.jpg";
+import DepthPortrait from "../components/depthPortrait/DepthPortrait.jsx";
 import "./About.css";
 
 // Link institucional de cada marco — usado por renderWhere para destacar o
-// nome da instituição em laranja (--copper) e linkar para o site oficial.
+// nome da instituição em dourado (--gold) e linkar para o site oficial.
 // Chaveado por id estável (não pelo texto exibido), já que o texto muda
 // conforme o idioma mas o link, não.
 const INSTITUTION_LINKS = {
@@ -100,6 +100,25 @@ const TIMELINE = [
       ],
     },
   },
+  {
+    when: "2026",
+    what: { pt: "Trabalho", en: "Work" },
+    where: {
+      // sem URL confirmada da ADPM ainda — renderWhere cai no <span>
+      // destacado em vez de link; acrescentar `adpm` em INSTITUTION_LINKS
+      // quando houver o endereço oficial
+      pt: [
+        "Entrei para trabalhar na ",
+        { id: "adpm", text: "ADPM" },
+        " (Administração Pública para Municípios).",
+      ],
+      en: [
+        "I started working at ",
+        { id: "adpm", text: "ADPM" },
+        " (Public Administration for Municipalities).",
+      ],
+    },
+  },
 ];
 
 // Marcos com trecho institucional destacam a instituição em `<mark>` — link
@@ -145,12 +164,14 @@ export default function About() {
       <div className="about__grid">
         {/* CONTEÚDO PLACEHOLDER — bio em primeira pessoa. */}
         <div className="about__bio fade-in">
-          <div className="about__portrait">
-            <img src={retrato} alt={s.about.portraitAlt} />
+          <div className="about__portrait about__portrait--depth">
+            <DepthPortrait alt={s.about.portraitAlt} />
           </div>
-          {s.about.bio.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
+          <div className="about__text">
+            {s.about.bio.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
         </div>
 
         <ol className="timeline">

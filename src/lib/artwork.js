@@ -11,9 +11,9 @@
    flashes: soft field, fine grid, one bright path with nodes.
    =========================================================== */
 
-const COPPER = [201, 124, 75];
-const CYAN = [143, 214, 230];
-const TEAL = [74, 102, 112];
+const GOLD = [212, 175, 55];
+const GOLD_HI = [246, 226, 122];
+const GREY = [90, 90, 90];
 
 /** xmur3 + mulberry32: tiny deterministic PRNG seeded from a string. */
 function seededRandom(str) {
@@ -45,7 +45,7 @@ export function paintArtwork(canvas, seedText) {
   ctx.fillRect(0, 0, W, H);
 
   // soft colour fields
-  const palette = [COPPER, CYAN, TEAL];
+  const palette = [GOLD, GOLD_HI, GREY];
   const blobCount = 3;
   for (let i = 0; i < blobCount; i++) {
     const col = palette[(i + Math.floor(rand() * 3)) % palette.length];
@@ -93,9 +93,9 @@ export function paintArtwork(canvas, seedText) {
     const midX = (prev.x + cur.x) / 2;
     ctx.bezierCurveTo(midX, prev.y, midX, cur.y, cur.x, cur.y);
   }
-  ctx.strokeStyle = rgba(COPPER, 0.85);
+  ctx.strokeStyle = rgba(GOLD, 0.85);
   ctx.lineWidth = 1.5;
-  ctx.shadowColor = rgba(COPPER, 0.9);
+  ctx.shadowColor = rgba(GOLD, 0.9);
   ctx.shadowBlur = 18;
   ctx.stroke();
   ctx.shadowBlur = 0;
@@ -103,7 +103,7 @@ export function paintArtwork(canvas, seedText) {
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
     const lit = rand() > 0.55;
-    const col = lit ? CYAN : COPPER;
+    const col = lit ? GOLD_HI : GOLD;
     ctx.beginPath();
     ctx.arc(p.x, p.y, lit ? 4 : 2.5, 0, Math.PI * 2);
     ctx.fillStyle = rgba(col, 0.95);

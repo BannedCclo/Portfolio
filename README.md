@@ -11,23 +11,23 @@ npm run preview   # serve o build de produção localmente
 
 ---
 
-## O que falta você preencher
+## Onde editar o conteúdo
 
-Tudo que está marcado com `CONTEÚDO PLACEHOLDER` foi escrito por mim como
-espaço reservado. O que bloqueia o site ficar real:
+O site é bilíngue (pt/en, alternado pelo `LanguageSwitcher` e lembrado em
+`localStorage`). Todo texto de interface fica no dicionário
+`src/lib/i18n/strings.js`; o que é dado estruturado fica perto de quem usa:
 
-| Onde | O que | Arquivo |
-|---|---|---|
-| Trabalho | 4 projetos: ano, nome, **o resultado em uma frase com número**, stack, link | `src/sections/Work.jsx` (array `PROJECTS`) |
-| Capturas | um `<img>` dentro de `.proj__visual` substitui `<ProjectArt>` (a arte gerada automaticamente) | `src/sections/Work.jsx` |
-| Ferramentas | as ferramentas que você realmente usa | `src/sections/Stack.jsx` (array `STACK_GROUPS`) |
-| Sobre | bio em primeira pessoa | `src/sections/About.jsx` |
-| Trajetória | empregos e formação com datas | `src/sections/About.jsx` (array `TIMELINE`) |
-| Retrato | trocar `.about__portrait--empty` por `<div className="about__portrait"><img … /></div>` | `src/sections/About.jsx` |
-| Contato | configurar o Resend pro formulário funcionar de verdade — ver [Formulário de contato](#formulário-de-contato) abaixo | `api/contact.js` |
+| O que | Arquivo |
+|---|---|
+| Textos de todas as seções (manifesto, bio, títulos, formulário, metadados da página) | `src/lib/i18n/strings.js` |
+| Projetos (ano, nome, resultado, stack, link, captura) — usados pela seção Trabalho e pelo botão de projeto aleatório do rodapé | `src/lib/projects.js` (+ imagens em `src/assets/projects/`) |
+| Ferramentas | `src/sections/Stack.jsx` (array `STACK_GROUPS`; nomes dos grupos no dicionário) |
+| Trajetória | `src/sections/About.jsx` (array `TIMELINE` + `INSTITUTION_LINKS`) |
+| Retrato | `src/assets/eu/retrato.jpg` |
+| Contato | `api/contact.js` — ver [Formulário de contato](#formulário-de-contato) abaixo |
 
-O manifesto (as três opiniões) também é meu chute a partir do que você já tinha
-escrito — vale reescrever com as suas, em `src/sections/Manifesto.jsx`.
+Os comentários `CONTEÚDO PLACEHOLDER` que ainda restam em `About.jsx` e
+`Stack.jsx` são da primeira versão; o conteúdo atrás deles já é real.
 
 ---
 
@@ -52,7 +52,8 @@ Configuração necessária (uma vez):
    mesmo). Se depois verificar um domínio no Resend, aponte `CONTACT_FROM_EMAIL`
    (mesma tela de env vars) pra um endereço desse domínio.
 
-Ver `.env.example` para o formato exato das variáveis.
+As duas variáveis (`RESEND_API_KEY` obrigatória, `CONTACT_FROM_EMAIL`
+opcional) são lidas em `api/contact.js`; não há `.env.example` no repo.
 
 **Dev local:** `npm run dev` (Vite puro) não serve `api/`, então o formulário
 vai dar erro de rede ao tentar enviar. Pra testar de verdade localmente, use a
@@ -68,7 +69,7 @@ index.html                    entrada do Vite — só <div id="root"> e o script
 api/
   contact.js                   Vercel Function — envia o email do formulário de contato (Resend)
 src/
-  main.jsx                    bootstrap (StrictMode, scrollRestoration)
+  main.jsx                    bootstrap (StrictMode, scrollRestoration, LanguageProvider)
   App.jsx                     compõe a página inteira
   styles/
     tokens.css                cores, escala tipográfica, espaçamento, easing
@@ -80,22 +81,32 @@ src/
     split.js                  quebra texto em palavras mascaradas
     artwork.js                arte procedural dos cards, semeada pelo nome
     gsap.js                   único ponto de registro dos plugins do GSAP
+    projects.js               lista de projetos (fonte única p/ Work e RandomProjectButton)
+    i18n/                     LanguageContext (pt/en, título/meta da página) + strings.js
+    debugPanel.js             diagnóstico temporário, só com ?debug na URL
     sections/*.js             comportamento de manifesto/trabalho/stack/sobre
   three/
     stage.js                  um canvas WebGL para a página inteira + diretor de atos
     acts/hero.js               o cérebro
     acts/finale.js             o cérebro de volta, no contato
   components/                 Stage, Nav, Spine, ProjectArt
+    LoadingScreen             cobre a página até o cérebro carregar (onStageReady)
+    LanguageSwitcher          alternância pt/en
+    RandomProjectButton       dado do rodapé que sorteia um projeto
     footer/, signature/       módulo compartilhado Assets/Footer, com a paleta daqui
     animatedLogo/             o logo da marca desenhando-se (Assets/Logo)
-  assets/logo/dark/           SVG do logo lido pelo animatedLogo (?raw)
+  assets/logo/dark/           SVGs do logo (animatedLogo lê via ?raw; versão -en)
+  assets/projects/            capturas dos projetos
+  assets/eu/                  retrato da seção Sobre
   sections/                   um componente + um .css por seção
 tools/
-  bake-brain.mjs               brain.stl → public/assets/brain.glb (rodar só se a malha mudar)
+  bake-brain.mjs               brain.stl → public/assets/brain.glb + brain-low.glb (rodar só se a malha mudar)
 assets-source/
   brain.stl                    fonte do baker, 4,1 MB — não vai para o build
 public/assets/
-  brain.glb                    o que o site carrega (1,9 MB)
+  brain.glb                    malha completa (1,2 MB)
+  brain-low.glb                malha reduzida (270 KB), escolhida pelo tier de qualidade
+                               (tipo de ponteiro) — ver three/stage.js e acts/hero.js
   favicon.svg, og.png
 ```
 
@@ -152,7 +163,7 @@ elementos direto do JS — nem via `style.setProperty`, nem via `setState`.
   amortecimento é feito no ticker. Empilhar `scrub` sobre `damp()` dá lag duplo.
 - **`scroll-behavior: smooth` está desligado de propósito** — briga com os pins
   do ScrollTrigger. Os âncoras da nav usam o `ScrollToPlugin` do GSAP.
-- **`js/split.js` mexe no DOM na mão dentro de um componente React** — e isso é
+- **`src/lib/split.js` mexe no DOM na mão dentro de um componente React** — e isso é
   intencional, não um descuido. O parágrafo alvo nunca muda depois do mount
   (sem props/estado dirigindo seu conteúdo), então o React nunca reconcilia
   aquele subtree de novo; `splitWords()` é idempotente (guardado por

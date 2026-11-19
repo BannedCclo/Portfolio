@@ -1,0 +1,67 @@
+/* O recorte e o canvas ocupam exatamente a mesma caixa: a troca entre eles
+   é só de opacidade, sem nenhum salto de layout. */
+.depth-portrait {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* luz vindo de baixo: mesmo matiz do --gold da UI, mais luminoso (bate com
+     a cor de uplight() em three/depthPortrait.js) */
+  --portrait-glow: 250 209 128;
+}
+
+/* Versão estática da luz, para a imagem plana (sem WebGL, ou antes do 3D
+   montar). Com o canvas ativo, a luz animada é desenhada pelo próprio motor
+   (LIGHT em three/depthPortrait.js) e esta some na mesma troca de opacidade. */
+.depth-portrait::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 38% 58% at 52% 112%,
+      rgb(var(--portrait-glow) / 0.3),
+      rgb(var(--portrait-glow) / 0.12) 45%,
+      rgb(var(--portrait-glow) / 0.035) 75%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse 60% 85% at 52% 115%,
+      rgb(var(--portrait-glow) / 0.1),
+      rgb(var(--portrait-glow) / 0.03) 60%,
+      transparent 100%
+    );
+  transition: opacity 0.6s ease;
+}
+.depth-portrait.is-3d::before {
+  opacity: 0;
+}
+
+.depth-portrait__flat,
+.depth-portrait__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.depth-portrait__flat {
+  object-fit: cover;
+  /* mesmo OVERSCAN do motor (three/depthPortrait.js), para os dois
+     enquadramentos baterem na troca */
+  transform: scale(1.045);
+  transition: opacity 0.6s ease;
+}
+
+.depth-portrait__canvas {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.depth-portrait.is-3d .depth-portrait__canvas {
+  opacity: 1;
+}
+.depth-portrait.is-3d .depth-portrait__flat {
+  opacity: 0;
+}

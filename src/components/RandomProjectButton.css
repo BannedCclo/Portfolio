@@ -32,8 +32,8 @@
 }
 .random-project:hover,
 .random-project:focus-visible {
-  border-color: var(--copper);
-  background: rgba(201, 124, 75, 0.08);
+  border-color: var(--gold);
+  background: rgba(201, 173, 114, 0.08);
   transform: translateY(-1px);
 }
 .random-project:active {
@@ -46,7 +46,7 @@
 .random-project__dice {
   display: inline-flex;
   flex: none;
-  color: var(--copper);
+  color: var(--gold);
   transition: transform var(--dur-fast) var(--ease-out-expo);
 }
 .random-project:hover .random-project__dice {
@@ -69,7 +69,7 @@
 }
 .random-project__title {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 500;
   font-size: var(--fs-4);
   line-height: 1.1;

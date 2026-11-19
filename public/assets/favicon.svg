@@ -2,14 +2,14 @@
   <!-- fundo sólido de propósito: o traço do IconDark é claro (feito pra ficar
        sobre fundo escuro), e a aba do navegador não garante isso — sem esse
        fundo, o favicon fica ilegível em tema claro -->
-  <rect width="200" height="200" rx="38" fill="#0a0a0d"/>
+  <rect width="200" height="200" rx="38" fill="#070707"/>
   <g id="IconDarkBold">
-    <path d="M184 100C184 119.14 177.463 137.706 165.473 152.624C153.482 167.543 136.756 177.919 118.063 182.035C99.3713 186.151 79.8339 183.76 62.686 175.257C45.5381 166.755 31.808 152.652 23.7688 135.282C15.7296 117.912 13.8634 98.3175 18.4793 79.7424C23.0951 61.1674 33.9161 44.7256 49.1508 33.1393C64.3855 21.5529 83.1202 15.5168 102.253 16.0302C121.386 16.5437 139.77 23.5759 154.362 35.9626" fill="none" stroke="#ECE8DF" stroke-width="8"/>
-    <path d="M185 100H135" fill="none" stroke="#ECE8DF" stroke-width="8"/>
-    <path d="M66 143V59L100 100L134 59V143" fill="none" stroke="#ECE8DF" stroke-width="8"/>
-    <path d="M100 100L153.5 35.5" fill="none" stroke="#ECE8DF" stroke-width="8"/>
-    <path d="M147 127V74" fill="none" stroke="#C97C4B" stroke-width="12"/>
-    <path d="M143 75H151" fill="none" stroke="#C97C4B" stroke-width="8"/>
-    <path d="M143 126H151" fill="none" stroke="#C97C4B" stroke-width="8"/>
+    <path d="M184 100C184 119.14 177.463 137.706 165.473 152.624C153.482 167.543 136.756 177.919 118.063 182.035C99.3713 186.151 79.8339 183.76 62.686 175.257C45.5381 166.755 31.808 152.652 23.7688 135.282C15.7296 117.912 13.8634 98.3175 18.4793 79.7424C23.0951 61.1674 33.9161 44.7256 49.1508 33.1393C64.3855 21.5529 83.1202 15.5168 102.253 16.0302C121.386 16.5437 139.77 23.5759 154.362 35.9626" fill="none" stroke="#F1F1F1" stroke-width="8"/>
+    <path d="M185 100H135" fill="none" stroke="#F1F1F1" stroke-width="8"/>
+    <path d="M66 143V59L100 100L134 59V143" fill="none" stroke="#F1F1F1" stroke-width="8"/>
+    <path d="M100 100L153.5 35.5" fill="none" stroke="#F1F1F1" stroke-width="8"/>
+    <path d="M147 127V74" fill="none" stroke="#C9AD72" stroke-width="12"/>
+    <path d="M143 75H151" fill="none" stroke="#C9AD72" stroke-width="8"/>
+    <path d="M143 126H151" fill="none" stroke="#C9AD72" stroke-width="8"/>
   </g>
 </svg>

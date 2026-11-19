@@ -52,7 +52,7 @@
   position: absolute;
   inset: 0;
   width: 40%;
-  background: var(--copper);
+  background: var(--gold-metal);
   animation: loadingSweep 1.3s ease-in-out infinite;
 }
 @keyframes loadingSweep {

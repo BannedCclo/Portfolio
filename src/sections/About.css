@@ -14,7 +14,9 @@
 @media (min-width: 900px) {
   .about__grid {
     grid-template-columns: 1fr 1fr;
-    align-items: start;
+    /* as duas colunas com a mesma altura: o texto da bio desce até o pé da
+       dela e termina junto com a linha do tempo */
+    align-items: stretch;
   }
 }
 
@@ -33,6 +35,49 @@
   height: 100%;
   object-fit: cover;
 }
+/* retrato recortado com volume (components/depthPortrait): sem moldura nem
+   fundo — só a figura sobre a página. A foto termina cortada no casaco, então
+   a base some num degradê em vez de acabar numa linha reta. */
+/* A bio é um container: o retrato mede min(100cqi, 30rem) de largura e 5/4
+   disso de altura, então dá para puxar o texto para cima numa fração exata da
+   altura dele, em qualquer tela. */
+.about__bio {
+  container-type: inline-size;
+  --portrait-w: min(100cqi, 30rem);
+  /* o texto começa na altura do botão mais baixo do casaco (≈ 73,5% da
+     altura do retrato) */
+  --portrait-overlap: calc(var(--portrait-w) * 1.25 * (1 - 0.735));
+}
+@media (min-width: 900px) {
+  .about__bio {
+    /* um pouco maior que a coluna (sobra para os lados, no vão entre as
+       colunas e na margem da página) */
+    --portrait-w: min(110cqi, 34rem);
+    display: flex;
+    flex-direction: column;
+  }
+  /* o texto vai para o pé da coluna (que tem a altura da linha do tempo);
+     o margin-bottom negativo do retrato só limita o quanto ele pode subir:
+     no máximo até o botão mais baixo do casaco */
+  .about__text {
+    margin-top: auto;
+  }
+}
+
+.about__portrait--depth {
+  /* maior e centralizado na coluna da bio: é a peça de destaque da seção */
+  width: var(--portrait-w);
+  max-width: none;
+  flex: none;
+  margin-inline: calc((100cqi - var(--portrait-w)) / 2);
+  margin-bottom: calc(-1 * var(--portrait-overlap));
+  background: none;
+  border: none;
+  overflow: visible;
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 99%);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent 99%);
+}
+
 /* stands in until a real photo exists */
 .about__portrait--empty {
   display: grid;
@@ -40,7 +85,7 @@
   background:
     radial-gradient(
       ellipse at 40% 30%,
-      rgba(201, 124, 75, 0.22),
+      rgba(201, 173, 114, 0.22),
       transparent 60%
     ),
     radial-gradient(
@@ -56,6 +101,36 @@
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--ink-mute);
+}
+
+/* O texto sobe por cima da base do casaco. Para não sumir no fundo: fica acima
+   do canvas, com uma película escura que nasce transparente (não corta a
+   figura numa linha), e uma sombra na cor da página em volta das letras, que
+   as destaca dos reflexos dourados da borda. */
+.about__text {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+.about__text::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(-1 * var(--sp-7)) calc(-1 * var(--sp-5)) 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgb(7 7 7 / 0) 0,
+    rgb(7 7 7 / 0.55) var(--sp-7),
+    rgb(7 7 7 / 0.7) calc(var(--sp-7) + var(--portrait-overlap) * 0.6),
+    rgb(7 7 7 / 0) 100%
+  );
+}
+.about__text p {
+  text-shadow:
+    0 0 1px var(--bg),
+    0 0 10px var(--bg),
+    0 0 22px rgb(7 7 7 / 0.8);
 }
 
 .about__bio p {
@@ -95,7 +170,7 @@
   top: 0.6em;
   width: 1px;
   height: calc(var(--fill, 0) * (100% - 1.2em));
-  background: linear-gradient(to bottom, var(--copper-lo), var(--copper));
+  background: linear-gradient(to bottom, var(--gold-lo), var(--gold), var(--gold-hi));
 }
 
 .tl {
@@ -121,9 +196,9 @@
     box-shadow 0.6s var(--ease-out-expo);
 }
 .tl.is-revealed::before {
-  background: var(--copper);
-  border-color: var(--copper);
-  box-shadow: 0 0 14px rgba(201, 124, 75, 0.7);
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(201, 173, 114, 0.7);
 }
 
 .tl__when {
@@ -147,15 +222,15 @@
   max-width: 40ch;
 }
 
-/* nome da instituição: destaque em laranja dentro do parágrafo, como um marca-texto
-   — mesmo tom do node aceso ao lado (--copper), então o olho já associa a cor ao
+/* nome da instituição: destaque em dourado dentro do parágrafo, como um marca-texto
+   — mesmo tom do node aceso ao lado (--gold), então o olho já associa a cor ao
    marco antes mesmo de ler o texto */
 .tl__institution {
-  color: var(--copper);
+  color: var(--gold);
   font-weight: 500;
 }
 a.tl__institution {
-  border-bottom: 1px solid rgba(201, 124, 75, 0.4);
+  border-bottom: 1px solid rgba(201, 173, 114, 0.45);
   transition:
     color var(--dur-fast) var(--ease-out-expo),
     border-color var(--dur-fast) var(--ease-out-expo);
@@ -163,6 +238,7 @@ a.tl__institution {
 a.tl__institution:hover,
 a.tl__institution:focus-visible {
   color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
   border-color: var(--ink);
 }
 

@@ -1,41 +1,62 @@
 /* ===========================================================
    design tokens
-   The palette is deliberately an extension of the original one,
-   not a replacement: the copper / near-black pairing was chosen to
-   match the warm lighting of the brain render, so swapping it would
-   desync the 3D scene from the page around it. What was missing was
-   depth (mid surfaces) and a cool counterpoint — both added below.
+   Identidade "Noir dourado": preto e branco neutros (sem creme) e um
+   único acento dourado champanhe, usado com parcimônia. A cena 3D
+   (three/stage.js, three/acts/*.js) usa as mesmas cores — fundo quase
+   preto, cérebro prata, luz de contorno e sinapses douradas — então
+   mudar o acento aqui pede mudar as constantes de lá também.
    =========================================================== */
 
 :root {
   /* ---- surfaces, darkest to lightest ---- */
-  --bg: #0a0a0d;
-  --bg-raise: #0f0f14;
-  --surface: #121218;
-  --surface-2: #17171f;
+  --bg: #070707;
+  --bg-raise: #0c0c0c;
+  --surface: #111111;
+  --surface-2: #171717;
 
   /* ---- ink ---- */
-  --ink: #ece8df;
-  --ink-dim: #8b8891;
-  --ink-mute: #5d5b63;
+  --ink: #f1f1f1;
+  --ink-dim: #9a9a9a;
+  --ink-mute: #6a6a6a;
 
-  /* ---- accents ---- */
-  --copper: #c97c4b;
-  --copper-lo: #7a4a2c;
-  /* lifted straight out of the synapse shader (uColorB = 0x8fd6e6) so the
-     page and the WebGL scene share one accent instead of two similar ones */
-  --cyan: #8fd6e6;
-  --teal: #4a6670;
+  /* ---- accents ----
+     --gold (texto e UI) é um champanhe metálico; o cérebro usa um ouro mais quente (0xd4af37 na rim light/sheen) e as
+     sinapses do shader vão do ouro claro (uColorA = 0xffc23d) ao ouro
+     escuro (uColorB = 0xb8860b). */
+  --gold: #c9ad72;
+  --gold-lo: #7d6a45;
+  --gold-hi: #ece0bd;
+  /* dourado metálico de verdade: uma cor chapada não "brilha", então áreas
+     de destaque (ênfases, barras, trilhos) usam este gradiente com faixas de
+     luz e sombra, como folha de ouro. --gold (chapado) fica para bordas,
+     outlines, texto pequeno e estados que fazem transição de cor — gradiente
+     não interpola em transition. */
+  /* champanhe metálico: brilho de metal sem a saturação de ouro amarelo —
+     no texto, ouro intenso competia com o título; o cérebro (three/) segue
+     com o ouro mais quente, que lá funciona como luz */
+  --gold-metal: linear-gradient(
+    100deg,
+    #b09868 0%,
+    #c9ad72 30%,
+    #d8c595 48%,
+    #c6aa70 66%,
+    #b29a69 100%
+  );
 
   /* ---- lines ---- */
-  --hairline: rgba(236, 232, 223, 0.12);
-  --hairline-strong: rgba(236, 232, 223, 0.22);
+  --hairline: rgba(241, 241, 241, 0.12);
+  --hairline-strong: rgba(241, 241, 241, 0.22);
 
-  /* ---- type families ---- */
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo,
-    monospace;
+  /* ---- type families ----
+     Display: DM Serif Display, reta (nunca itálica) — contraste alto mas
+     com hairlines encorpadas o bastante para não sumirem sobre o preto e o
+     cérebro (a Bodoni Moda em tamanho grande ficava com traços finos demais).
+     A ênfase vem do dourado. Rótulos/metadados usam a mesma Manrope do corpo, em caixa alta
+     espaçada; --font-mono continua existindo como papel ("metadado"), não
+     como fonte monoespaçada — os números ficam alinhados via tabular-nums. */
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-body: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-mono: "Manrope", system-ui, -apple-system, sans-serif;
 
   /* ---- type scale (~1.25 modular, fluid above --fs-5) ---- */
   --fs-1: 0.72rem;
@@ -81,6 +102,7 @@
   /* ---- z layers ---- */
   --z-stage: 0;
   --z-content: 1;
+  --z-beam: 2; /* a corrente do cérebro, por cima das seções (beamOverlay.js) */
   --z-chrome: 40;
   --z-nav: 50;
   --z-loading: 100;

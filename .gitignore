@@ -7,3 +7,10 @@ dist/
 !.env.example
 .vercel
 .env*
+
+# previas do pipeline do retrato (tools/bake-portrait-depth.py --debug)
+assets-source/_debug/
+
+# local
+.claude/
+__pycache__/

@@ -9,8 +9,11 @@
    the brain drifts in blurred and distant behind the title card, tilts and
    zooms into its settled top-down pose during "approach", then holds while
    three text pages take turns recomposing it into distinct side views, and
-   finally the camera pushes in while the scene dissolves to the page
-   background — so it disappears just before the camera would reach it.
+   finally it comes apart into a current of light: the surface burns away
+   with a gold edge, every burnt-away piece becomes a particle, and the
+   particles swirl into a stream that travels — as the About section scrolls
+   up — to the back of the portrait's head, where they switch on the
+   portrait's own backlight (three/brainBeam.js, lib/portraitLight.js).
 
    Under prefers-reduced-motion the pin never exists (see initHero()'s
    `else` branch) and update() takes an entirely separate path, updateStatic()
@@ -45,6 +48,7 @@ import {
   PAGE_BG,
   warmUpStage,
   markStageReady,
+  stars,
 } from "../stage.js";
 import { ScrollTrigger } from "../../lib/gsap.js";
 import {
@@ -55,6 +59,17 @@ import {
   sampleCurve,
   damp,
 } from "../../lib/motion.js";
+import {
+  addDissolve,
+  beamUniforms,
+  createBeamPoints,
+  dissolveGLSL,
+  dissolveThresholdGLSL,
+  RELEASE,
+  ARRIVE,
+} from "../brainBeam.js";
+import { portraitLight } from "../../lib/portraitLight.js";
+import { BEAM_LAYER, createBeamOverlay } from "../beamOverlay.js";
 
 const reduceMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
@@ -77,7 +92,7 @@ const MOBILE_BRAIN_SCALE = 0.74;
 // the finale (acts/finale.js) can restore it if the user scrolls back up past
 // Contact into the hero, since finale is the only other act that ever tints
 // scene.background/fog.
-export const HERO_BG = 0x1e1a1c;
+export const HERO_BG = 0x121212;
 // scene.fog.near's resting value (matches the Fog() constructor in stage.js)
 // — restored on deactivate so a mid-approach scroll-away doesn't leave the
 // fog dense for whatever act looks at the scene next.
@@ -95,13 +110,13 @@ export const brainGroup = new THREE.Group();
 // watchdog to chase.
 const isLowTier = quality.tier === "low";
 export const tissueMat = new THREE.MeshPhysicalMaterial({
-  color: 0xc9bcae,
+  color: 0xbdbdbd,
   roughness: 0.72,
   metalness: 0,
   clearcoat: isLowTier ? 0 : 0.08,
   clearcoatRoughness: 0.55,
   sheen: isLowTier ? 0 : 0.15,
-  sheenColor: new THREE.Color(0xc97c4b),
+  sheenColor: new THREE.Color(0xd4af37),
   envMapIntensity: isLowTier ? 0.35 : 0.55,
   // The bake clips the mesh below y=79 (see tools/bake-brain.mjs), leaving a
   // small closed hole at the back of the base. DoubleSide used to paper over
@@ -193,8 +208,8 @@ export const synapseMat = new THREE.ShaderMaterial({
   uniforms: {
     uTime: { value: 0 },
     uActivation: { value: 0 },
-    uColorA: { value: new THREE.Color(0xffb27a) },
-    uColorB: { value: new THREE.Color(0x8fd6e6) },
+    uColorA: { value: new THREE.Color(0xffc23d) },
+    uColorB: { value: new THREE.Color(0xb8860b) },
     // how many of the 12 flash slots actually draw — quality.flashes at
     // start (6/9/12 by tier), and the watchdog can cut it to 3 at its last
     // degrade step
@@ -223,10 +238,14 @@ export const synapseMat = new THREE.ShaderMaterial({
       ),
     },
     uPulseStart: { value: new Array(PULSE_COUNT).fill(PULSE_NEVER) },
+    // compartilhados com o tecido e as partículas (three/brainBeam.js)
+    uDissolve: beamUniforms.uDissolve,
+    uDisDir: beamUniforms.uDisDir,
   },
   vertexShader: `
     uniform float uTime;
     varying vec3 vDir;
+    varying float vDis;
     // n1/n2 are smooth functions of direction (feature scale ~1/7.31 units);
     // only the threshold applied to them in the fragment shader is fine, so
     // evaluating the noise per-vertex and interpolating linearly costs one
@@ -234,8 +253,10 @@ export const synapseMat = new THREE.ShaderMaterial({
     // difference between ~15k evaluations and ~380k.
     varying vec2 vNoise;
     ${noiseGLSL}
+    ${dissolveGLSL}
     void main(){
       vDir = normalize(position);
+      vDis = dissolveField(position);
       vec3 p = vDir * 3.4;
       vNoise = vec2(
         snoise(p + vec3(0.0, 0.0, uTime * 0.06)),
@@ -258,7 +279,10 @@ export const synapseMat = new THREE.ShaderMaterial({
     uniform float uPulseStart[${PULSE_COUNT}];
     varying vec3 vDir;
     varying vec2 vNoise;
+    varying float vDis;
+    uniform float uDissolve;
     ${noiseGLSL}
+    ${dissolveThresholdGLSL}
 
     // a single quick pulse of light travelling a short arc between two nearby
     // surface points, firing on its own random repeating schedule — reads as a
@@ -306,6 +330,9 @@ export const synapseMat = new THREE.ShaderMaterial({
     }
 
     void main(){
+      // dissolução (three/brainBeam.js): some junto com o tecido
+      float disT = dissolveThreshold(uDissolve);
+      if (uDissolve > 0.0005 && vDis < disT) discard;
       vec3 vDirN = normalize(vDir);
       float n1 = vNoise.x;
       float n2 = vNoise.y;
@@ -325,12 +352,16 @@ export const synapseMat = new THREE.ShaderMaterial({
         flash += synapseFlash(vDirN, uFlashA[i], uFlashB[i], uFlashSeed[i]);
       }
       flash = clamp(flash, 0.0, 1.0);
-      col = mix(col, vec3(1.0), flash * 0.6);
+      // núcleo do flash puxa para um ouro pálido, não para o branco — com
+      // blending aditivo sobre o cérebro prata, branco puro apagava o dourado
+      col = mix(col, vec3(1.0, 0.85, 0.42), flash * 0.45);
       intensity += flash * uActivation * 2.4;
 
-      // click pulses are a direct response to the user, not part of the
-      // scroll-driven "thinking" narrative — they stay visible at full
-      // strength even before uActivation has woken the rest of this up.
+      // click pulses follow the same uActivation as the resting veins: while
+      // the synapses are still dark (start of the hero), a click shows
+      // nothing, and the pulse fades in together with the rest of the
+      // network as the scroll wakes it up — so it never reads as a separate
+      // effect appearing on its own.
       // Whole block is skipped (uPulseAny) when nothing is playing, which is
       // true almost all the time — reuses this fragment's own vein value
       // (already computed above) as the pulse's texture.
@@ -341,14 +372,33 @@ export const synapseMat = new THREE.ShaderMaterial({
           pulse += synapsePulse(vDirN, uPulseOrigin[i], uPulseStart[i], veins, pulseJitter);
         }
         pulse = clamp(pulse, 0.0, 1.0);
-        col = mix(col, vec3(1.0), pulse * 0.8);
+        pulse *= uActivation;
+        col = mix(col, vec3(1.0, 0.85, 0.42), pulse * 0.5);
         intensity += pulse * 3.1;
+      }
+
+      // na dissolução a rede inteira acende (o cérebro vira luz) e a borda
+      // que está se desfazendo brilha mais
+      if (uDissolve > 0.0005) {
+        float edge = 1.0 - smoothstep(0.0, 0.06, vDis - disT);
+        float wake = smoothstep(0.0, 0.2, uDissolve);
+        intensity = max(intensity, veins * wake * 1.2) + edge * edge * 0.6;
+        col = mix(col, vec3(1.0, 0.85, 0.42), edge * 0.5);
       }
 
       gl_FragColor = vec4(col * intensity, intensity);
     }
   `,
 });
+
+// a saída do hero: o tecido se desfaz (three/brainBeam.js). Sob reduced
+// motion uDissolve nunca sai de 0 e o shader injetado não faz nada.
+addDissolve(tissueMat, noiseGLSL);
+
+// a corrente de partículas, criada quando a malha chega (ver abaixo)
+let beamPoints = null;
+let beamOverlay = null;
+const BEAM_COUNT = { high: 42000, mid: 22000, low: 11000 };
 
 /* ---------------------------------------------------------------
    mesh loading
@@ -421,6 +471,23 @@ brainGeometryReady = new Promise((resolve, reject) => {
       synapseMat.uniforms.uFlashA.value = flashA;
       synapseMat.uniforms.uFlashB.value = flashB;
       synapseMat.uniforms.uFlashSeed.value = flashSeed;
+
+      if (!reduceMotion) {
+        beamPoints = createBeamPoints(geometry, BEAM_COUNT[quality.tier], noiseGLSL);
+        // desenhada por cima do conteúdo, num canvas próprio (beamOverlay.js):
+        // a câmera do palco não enxerga a camada dela
+        beamPoints.layers.set(BEAM_LAYER);
+        brainGroup.add(beamPoints);
+        beamOverlay = createBeamOverlay(quality);
+        // compila o programa agora: compilar no meio da rolagem engasgaria
+        // a saída
+        {
+          const saved = camera.layers.mask;
+          camera.layers.set(BEAM_LAYER);
+          beamOverlay.renderer.compile(beamPoints, camera);
+          camera.layers.mask = saved;
+        }
+      }
 
       resolve(geometry);
     },
@@ -596,7 +663,6 @@ const STATIC_BLUR_PX = 1.5;
 
 const camStart = new THREE.Vector3(0, 0.25, 8.1);
 const camEnd = new THREE.Vector3(0, 2.0, 6.7);
-const camDeep = new THREE.Vector3(0, 2.0, 1.0); // exit: keeps closing in toward the brain
 
 let mouseX = 0;
 let mouseY = 0;
@@ -619,17 +685,39 @@ function update(t, dt) {
     return;
   }
 
-  // pose.exit chases exitEase over wall-clock time (damp(), not scroll
-  // distance) — computed unconditionally, first thing, so it keeps
-  // converging every frame this runs regardless of what wantsRender was on
-  // the previous frame or how fast progress itself is moving.
-  const exitEase = smoothstep(
-    clamp01((progress - PHASE.exitStart) / (1 - PHASE.exitStart)),
-  );
-  pose.exit = damp(pose.exit, exitEase, dt);
-
-  const exitOpacity = smoothstep(clamp01(pose.exit / 0.7));
-  exitFadeEl.style.opacity = exitOpacity;
+  // A saída: o cérebro vira uma corrente de luz que viaja até a cabeça do
+  // retrato (three/brainBeam.js). `beamB` é uma função CONTÍNUA e
+  // estritamente crescente da posição de rolagem, em três pontos:
+  //   - fim do pin (progress BEAM_PIN_START) → 0: o cérebro começa a se desfazer;
+  //   - cabeça a ~80% da altura da tela → ARRIVE.start: as primeiras chegam
+  //     (a corrente nunca viaja para um ponto fora da tela);
+  //   - cabeça a ~35% → 1.
+  // Linear entre eles, medida na rolagem de verdade (não no progress do pin,
+  // que acaba antes da seção Sobre aparecer e deixava um trecho em que rolar
+  // não mexia a corrente). Suavizado no tempo.
+  const head = headScreenPoint();
+  const vh = window.innerHeight;
+  let beamTarget = 0;
+  if (head && pinTrigger) {
+    const sy = window.scrollY;
+    const s0 = pinTrigger.start + BEAM_PIN_START * (pinTrigger.end - pinTrigger.start);
+    // a cabeça sobe 1px por px rolado: em que rolagem ela fica em f·vh
+    const sA = Math.max(s0 + 1, sy + head.y - vh * BEAM_ARRIVE_AT);
+    const s1 = Math.max(sA + 1, sy + head.y - vh * BEAM_END_AT);
+    beamTarget =
+      sy <= sA
+        ? ARRIVE.start * clamp01((sy - s0) / (sA - s0))
+        : ARRIVE.start + (1 - ARRIVE.start) * clamp01((sy - sA) / (s1 - sA));
+  }
+  // ao ativar (carregar a página já no meio, voltar de longe) salta direto:
+  // senão o cérebro "se desfaria" sozinho na frente de quem só chegou
+  if (beamSnap) {
+    beamB = beamTarget;
+    beamSnap = false;
+  }
+  beamB = damp(beamB, beamTarget, dt, 7);
+  if (beamB > 0.9995) beamB = 1;
+  exitFadeEl.style.opacity = 0;
 
   // Scroll-driven chrome, written every frame from `progress` rather than
   // from GSAP's own onUpdate callback (see onProgress above) — unconditional,
@@ -661,36 +749,41 @@ function update(t, dt) {
   }
   titleScreenEl.style.opacity = 1 - ease;
 
-  // Release the canvas once there is nothing left to show. Two conditions,
-  // because each covers a case the other misses: the exit fade having
-  // actually finished — gated on the overlay's own opacity, not raw
-  // progress. Progress can reach 1 almost instantly on a fast scroll while
-  // pose.exit (which the opacity above is drawn from) is still catching up;
-  // gating on progress used to hide the canvas mid-fade, with the brain only
-  // partially covered by .brain-exit-fade's flat overlay — a visibly uneven
-  // cut, worse the faster the scroll. Gating on the overlay's own opacity
-  // instead means the canvas only ever disappears once it has already gone
-  // fully opaque and uniform, however long that takes in real time — the
-  // same fixed duration regardless of scroll speed. The second condition,
-  // the section simply not being on screen, covers a fast scrollbar drag or
-  // instant scrollTo crossing the whole pin distance in one step.
+  // fração das partículas que já entrou na cabeça (janela ARRIVE): acende a
+  // luz de trás do retrato e, pelo que entra a cada quadro, o brilho de
+  // dentro da cabeça (lib/portraitLight.js)
+  portraitLight.level = smoothstep(
+    clamp01((beamB - ARRIVE.start) / (ARRIVE.span + 0.02)),
+  );
+  // o próprio progresso da corrente: o retrato desenha, por cima da foto, as
+  // partículas que de fato entram na cabeça (three/headInflow.js)
+  portraitLight.beam = beamB;
+
+  // O canvas continua enquanto houver cérebro ou corrente para desenhar —
+  // inclusive com o hero já fora da tela, sobre a seção Sobre (as seções não
+  // têm fundo próprio). Termina quando a corrente já sumiu dentro da cabeça.
   if (act) {
     const rect = act.rect;
-    const onScreen = rect.bottom > 0 && rect.top < window.innerHeight;
-    act.wantsRender = exitOpacity < 1 && onScreen;
+    const onScreen = rect.bottom > 0 && rect.top < vh;
+    act.wantsRender = beamB < 0.995 && (onScreen || beamB > 0.001);
 
-    // The vignette and bottom fade are flat, always-on darkening while the
-    // hero owns the canvas — no fade curve of their own to chase, so they
-    // just mirror wantsRender directly. A binary snap here is safe (unlike
-    // it would be for the canvas itself): it only ever lands exactly when
-    // wantsRender also flips, i.e. while the canvas is already hidden on one
-    // side of that instant or the exit-fade is already opaque on the other.
-    const vignetteOpacity = act.wantsRender ? 1 : 0;
+    // vinheta e degradê de baixo escurecem o cérebro atrás do texto do hero;
+    // somem durante a saída, para não escurecer a seção Sobre
+    const vignetteOpacity = act.wantsRender
+      ? 1 - smoothstep(clamp01(beamB / 0.45))
+      : 0;
     vignetteEl.style.opacity = vignetteOpacity;
     fadeBottomEl.style.opacity = vignetteOpacity;
 
     if (!act.wantsRender) return;
   }
+
+  // o fundo quente do hero vira o fundo da página (a corrente passa por cima
+  // da seção Sobre), e as estrelas saem junto
+  const bgMix = smoothstep(clamp01((beamB - 0.1) / 0.4));
+  scene.background.lerpColors(heroBgColor, pageBgColor, bgMix);
+  scene.fog.color.copy(scene.background);
+  stars.material.opacity = STARS_OPACITY * (1 - smoothstep(clamp01((beamB - 0.4) / 0.5)));
 
   if (!reduceMotion) {
     idleYaw = Math.min(
@@ -722,7 +815,6 @@ function update(t, dt) {
   );
 
   camPos.lerpVectors(camStart, camEnd, ease);
-  camPos.lerp(camDeep, pose.exit);
   camPos.y += pose.camY * ease;
   if (!reduceMotion) {
     camPos.x += mouseX * 0.16 + Math.sin(t * 0.15) * 0.04;
@@ -736,13 +828,109 @@ function update(t, dt) {
   synapseMat.uniforms.uActivation.value = activation;
   synapseMat.uniforms.uFlashCount.value =
     quality.level >= 5 ? Math.min(quality.flashes, 3) : quality.flashes;
-  // a pulse must be able to show on its own, so the mesh also stays visible
-  // for as long as the most recent one is still alive, independent of
-  // uActivation — this is what lets a click read on the still-dormant intro
-  // brain, well before the scroll-driven synapses have woken up
+  // click pulses are scaled by uActivation in the shader (same opacity as
+  // the resting veins), so while the synapses are dormant a pulse would draw
+  // nothing — the mesh only needs to be visible once activation is up, and
+  // the pulse branch only runs while one is alive on an awake network
   const pulseAlive = t - lastPulseTime < PULSE_LIFE;
-  synapseMat.uniforms.uPulseAny.value = pulseAlive ? 1 : 0;
-  if (synapseMesh) synapseMesh.visible = activation > 0.001 || pulseAlive;
+  const awake = activation > 0.001;
+  synapseMat.uniforms.uPulseAny.value = pulseAlive && awake ? 1 : 0;
+  if (synapseMesh) synapseMesh.visible = awake;
+
+  updateBeam(t, head);
+}
+
+/* ---------------------------------------------------------------
+   a corrente de luz — ver three/brainBeam.js
+--------------------------------------------------------------- */
+const BEAM_PIN_START = 0.86; // progress do pin em que o cérebro começa a se desfazer
+const BEAM_ARRIVE_AT = 0.8; // altura da cabeça na tela (fração) quando as primeiras chegam
+const BEAM_END_AT = 0.35; // e quando a última entra
+let pinTrigger = null;
+const STARS_OPACITY = 0.35; // o valor de stage.js, restaurado ao sair
+// ponto de entrada (no cabelo), em fração da caixa do .depth-portrait — só
+// até o retrato publicar o seu (portraitLight.entry)
+const HEAD_IN_PORTRAIT = { x: 0.49, y: 0.2 };
+let beamB = 0;
+let beamSnap = true;
+const heroBgColor = new THREE.Color(HERO_BG);
+const pageBgColor = new THREE.Color(PAGE_BG);
+let portraitEl = null;
+
+/** centro (de trás) da cabeça do retrato, em px da janela; null sem retrato */
+function headScreenPoint() {
+  if (!portraitEl?.isConnected) portraitEl = document.querySelector(".depth-portrait");
+  if (!portraitEl) return null;
+  const r = portraitEl.getBoundingClientRect();
+  // o ponto de entrada que o próprio retrato publica (no cabelo); antes de
+  // ele montar, uma estimativa fixa
+  const f = portraitLight.entry ?? HEAD_IN_PORTRAIT;
+  return {
+    x: r.left + r.width * f.x,
+    y: r.top + r.height * f.y,
+  };
+}
+
+const beamRay = new THREE.Raycaster();
+const beamNdc = new THREE.Vector2();
+const beamPlane = new THREE.Plane();
+const tmpV = new THREE.Vector3();
+const tmpN = new THREE.Vector3();
+const centerW = new THREE.Vector3();
+const targetW = new THREE.Vector3();
+const BEND_WORLD = new THREE.Vector3(0.3, 1.1, 0.9); // a curva sobe e passa na frente
+
+function updateBeam(t, head) {
+  const d = clamp01((beamB - RELEASE.start) / RELEASE.span);
+  beamUniforms.uB.value = beamB;
+  beamUniforms.uDissolve.value = beamB > 0.0005 ? Math.max(d, 0.001) : 0;
+  if (!beamPoints) return;
+  beamPoints.visible = beamB > RELEASE.start * 0.5 && beamB < 0.999;
+  if (!beamPoints.visible || !head) {
+    beamOverlay?.clear();
+    return;
+  }
+
+  // destino: o raio da câmera pela cabeça, cortando o plano que passa pelo
+  // centro do cérebro de frente para a câmera
+  camera.updateMatrixWorld();
+  brainGroup.updateMatrixWorld();
+  brainGroup.getWorldPosition(centerW);
+  // o destino nunca sai da tela: enquanto a cabeça ainda não apareceu (ou
+  // já passou), a corrente espera na borda, onde dá para acompanhá-la — e
+  // como as chegadas só começam com a cabeça visível (beamTarget em update()), ela
+  // já está mirando a cabeça de verdade quando as partículas entram
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const sx = Math.min(vw * 0.92, Math.max(vw * 0.08, head.x));
+  const sy = Math.min(vh * 0.86, Math.max(vh * 0.1, head.y));
+  beamNdc.set((sx / vw) * 2 - 1, -(sy / vh) * 2 + 1);
+  beamRay.setFromCamera(beamNdc, camera);
+  camera.getWorldDirection(tmpN);
+  beamPlane.setFromNormalAndCoplanarPoint(tmpN, centerW);
+  if (!beamRay.ray.intersectPlane(beamPlane, targetW)) {
+    beamOverlay.clear();
+    return;
+  }
+
+  const u = beamPoints.material.uniforms;
+  brainGroup.worldToLocal(u.uTarget.value.copy(targetW));
+  brainGroup.worldToLocal(u.uBend.value.copy(centerW).add(BEND_WORLD));
+  u.uDisDir.value.copy(u.uTarget.value).normalize();
+
+  // direção em que o feixe chega (na tela): do ponto a 80% da curva até o
+  // destino. O ponto de contato no retrato se alonga nela (headInflow.js)
+  const tgt = u.uTarget.value;
+  tmpV.copy(tgt).multiplyScalar(0.5).add(u.uBend.value).multiplyScalar(2 * 0.2 * 0.8)
+    .addScaledVector(tgt, 0.64);
+  brainGroup.localToWorld(tmpV).project(camera);
+  const px = ((tmpV.x + 1) / 2) * vw;
+  const py = ((1 - tmpV.y) / 2) * vh;
+  const len = Math.hypot(px - sx, py - sy);
+  if (len > 1) portraitLight.dir = { x: (px - sx) / len, y: (py - sy) / len };
+  u.uTime.value = t;
+  u.uPixelRatio.value = Math.min(window.devicePixelRatio || 1, quality.maxDpr);
+  beamOverlay.render(beamPoints, camera);
 }
 
 /** Reduced-motion path: a fixed top-down pose, the title card and first text
@@ -862,7 +1050,13 @@ export function initHero() {
         vignetteEl.style.opacity = 0;
         fadeBottomEl.style.opacity = 0;
         exitFadeEl.style.opacity = 0;
+        // estado compartilhado que a saída mexe: devolve ao normal
+        stars.material.opacity = STARS_OPACITY;
+        portraitLight.level = 1;
+        portraitLight.beam = 1;
+        beamOverlay?.clear();
       }
+      beamSnap = true;
 
       // scene.background/fog is shared state, not owned by any one act. Set
       // it back to the warm hero tone on the way in (in case the user
@@ -920,6 +1114,7 @@ export function initHero() {
       onToggle: (self) =>
         document.body.classList.toggle("is-hero", self.isActive),
     });
+    pinTrigger = trigger;
   } else {
     // No pin, no scroll-driven progress — #brain stays the same 100svh
     // frame it always is, updateStatic() above drives the 3D, and the title
@@ -935,6 +1130,7 @@ export function initHero() {
     window.removeEventListener("pointermove", onPointerMove);
     if (!reduceMotion) section.removeEventListener("click", onClick);
     trigger?.kill();
+    pinTrigger = null;
     document.body.classList.remove("is-hero");
     unregisterAct(act);
     act = null;

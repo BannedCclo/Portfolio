@@ -27,20 +27,20 @@
   letter-spacing: var(--track-wide);
   text-transform: uppercase;
   color: var(--ink-dim);
-  text-shadow: 0 0 18px rgba(10, 10, 13, 0.9);
+  text-shadow: 0 0 18px rgba(7, 7, 7, 0.9);
 }
 
 .contact__title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-style: italic;
+  font-style: normal;
   font-size: var(--fs-8);
   line-height: 1.02;
   letter-spacing: -0.01em;
   max-width: 16ch;
   text-shadow:
-    0 0 40px rgba(10, 10, 13, 0.9),
-    0 0 90px rgba(10, 10, 13, 0.7);
+    0 0 40px rgba(7, 7, 7, 0.9),
+    0 0 90px rgba(7, 7, 7, 0.7);
 }
 
 /* ---------- form ----------
@@ -117,7 +117,7 @@
   text-shadow: 0 1px 4px rgba(6, 6, 8, 0.9);
   transition: border-color var(--dur-fast) var(--ease-out-expo);
   /* Overrides the global :focus-visible box outline (base.css) — the
-     underline changing to --copper below is this form's own focus
+     underline changing to --gold below is this form's own focus
      indicator, and a second boxed outline on top of it read as clutter. */
   outline: none;
 }
@@ -127,7 +127,7 @@
 }
 .contact__field input:focus,
 .contact__field textarea:focus {
-  border-color: var(--copper);
+  border-color: var(--gold);
 }
 .contact__field textarea {
   resize: vertical;
@@ -174,8 +174,8 @@
     opacity var(--dur-fast) var(--ease-out-expo);
 }
 .contact__submit:hover:not(:disabled) {
-  color: var(--copper);
-  border-color: var(--copper);
+  color: var(--gold);
+  border-color: var(--gold);
 }
 .contact__submit:disabled {
   opacity: 0.5;
@@ -185,10 +185,10 @@
   font-family: var(--font-mono);
   font-size: var(--fs-2);
   line-height: 1.6;
-  text-shadow: 0 0 16px rgba(10, 10, 13, 0.9);
+  text-shadow: 0 0 16px rgba(7, 7, 7, 0.9);
 }
 .contact__status--ok {
-  color: var(--copper);
+  color: var(--gold);
 }
 .contact__status--error {
   color: var(--ink-dim);
@@ -198,8 +198,8 @@
   border-bottom: 1px solid var(--hairline-strong);
 }
 .contact__status--error a:hover {
-  color: var(--copper);
-  border-color: var(--copper);
+  color: var(--gold);
+  border-color: var(--gold);
 }
 
 @media (max-width: 640px) {

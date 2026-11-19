@@ -35,7 +35,7 @@ export type LogoLang = keyof (typeof MARKUP)["dark"]["horizontal"];
 
 // Laranja do cursor. É a única cor fora do traço principal, e é por ela que o
 // cursor é reconhecido dentro do SVG.
-const CURSOR_COLOR = "#C97C4B";
+const CURSOR_COLOR = "#C9AD72";
 
 /*
  * O contorno do ícone leva sempre isto, seja qual for a variante. Nos logos
