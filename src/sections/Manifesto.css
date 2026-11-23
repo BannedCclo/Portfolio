@@ -3,7 +3,7 @@
 
    Deliberately typographic and 2D. Right after the hero's heavy 3D the page
    needs to breathe; the only motion here is text rising and a signal running
-   down the rail.
+   down the rail (the same one as the timeline in About).
    =========================================================== */
 
 .manifesto {
@@ -37,18 +37,29 @@
   opacity: 1;
 }
 
-/* ---------- the synapse rail ----------
-   The page's recurring motif: a hairline carrying a signal. It fills as the
-   section scrolls and a brighter pulse rides at the head of the fill, which
-   is the same idea as the transmission flashes on the brain's surface. */
+/* ---------- o trilho ----------
+   Idêntico ao da trajetória (About.css, .timeline): um fio de 1px que liga
+   o centro do primeiro ponto ao do último, um preenchimento que nasce
+   transparente e esquenta até o dourado, e a mesma ponta brilhante correndo
+   à frente. Onde o fio começa e termina (--rail-top/--rail-h) e quanto já
+   encheu (--fill) vêm de lib/sections/manifesto.js. */
+.manifesto__track {
+  position: relative;
+  /* recuo da lista: o fio fica na borda esquerda, os pontos centrados nele */
+  --indent: clamp(var(--sp-7), 4vw, 3.5rem);
+}
 .manifesto__rail {
   position: absolute;
-  left: calc(var(--gutter) - 1px);
-  top: clamp(6rem, 18vh, 12rem);
-  bottom: clamp(6rem, 16vh, 10rem);
+  left: 3px;
+  top: var(--rail-top, 0px);
+  height: var(--rail-h, 0px);
   width: 1px;
   background: var(--hairline);
   pointer-events: none;
+  /* nada sai acima do primeiro ponto nem abaixo do último: a ponta
+     brilhante (46px, puxada 80% para cima) é cortada no começo do fio. Nas
+     laterais sobra folga para o halo dela. */
+  clip-path: inset(0 -48px);
 }
 .manifesto__rail::after {
   content: "";
@@ -64,6 +75,7 @@
 }
 .manifesto__pulse {
   position: absolute;
+  z-index: 1;
   left: 50%;
   top: calc(var(--fill, 0) * 100%);
   width: 3px;
@@ -73,20 +85,17 @@
   background: linear-gradient(to bottom, transparent, var(--gold-hi), transparent);
   box-shadow:
     0 0 12px var(--gold-hi),
-    0 0 30px rgba(143, 214, 230, 0.4);
+    0 0 30px rgba(236, 200, 120, 0.4);
   opacity: var(--pulse-alpha, 0);
-}
-@media (max-width: 820px) {
-  .manifesto__rail {
-    display: none;
-  }
+  transition: opacity 0.6s var(--ease-out-expo);
+  pointer-events: none;
 }
 
 /* ---------- head ----------
    Stacked and left-aligned rather than the two-column .block__head used
    elsewhere: a manifesto reads as a statement, not as a labelled record. */
 .manifesto__head {
-  padding-left: clamp(0rem, 4vw, 3.5rem);
+  padding-left: clamp(var(--sp-7), 4vw, 3.5rem);
 }
 .manifesto__title {
   font-family: var(--font-display);
@@ -107,10 +116,13 @@
   flex-direction: column;
   gap: clamp(4rem, 12vh, 8rem);
   margin-top: clamp(3rem, 8vh, 5rem);
-  padding-left: clamp(0rem, 4vw, 3.5rem);
+  padding-left: var(--indent);
 }
 
 .tenet {
+  /* acima do trilho e da ponta: o fio passa por trás do ponto */
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--sp-4);
@@ -131,13 +143,14 @@
   padding-top: 0.75em;
   position: relative;
 }
-/* small node on the rail, lighting up with its tenet.
-   The number sits one list-indent to the right of the rail, so stepping back
-   by that indent (plus half the dot) lands it centred on the line. */
+/* o marco: igual ao da trajetória (About.css, .tl::before) — um ponto
+   opaco que esconde o fio por trás e acende quando o preenchimento chega a
+   ele (manifesto.js põe .is-lit): miolo claro, aro dourado e um halo.
+   O recuo da lista (--indent) leva o ponto até a borda, centrado no fio. */
 .tenet__num::before {
   content: "";
   position: absolute;
-  left: calc(-1 * clamp(0rem, 4vw, 3.5rem) - 4px);
+  left: calc(-1 * var(--indent));
   top: 1.1em;
   width: 7px;
   height: 7px;
@@ -145,19 +158,19 @@
   background: var(--bg);
   border: 1px solid var(--hairline-strong);
   transition:
-    background 0.6s var(--ease-out-expo),
-    border-color 0.6s var(--ease-out-expo),
-    box-shadow 0.6s var(--ease-out-expo);
+    background 0.5s var(--ease-out-expo),
+    border-color 0.5s var(--ease-out-expo),
+    box-shadow 0.5s var(--ease-out-expo),
+    transform 0.5s var(--ease-out-expo);
 }
-.tenet.is-revealed .tenet__num::before {
-  background: var(--gold);
-  border-color: var(--gold);
-  box-shadow: 0 0 14px rgba(201, 173, 114, 0.7);
-}
-@media (max-width: 819px) {
-  .tenet__num::before {
-    display: none;
-  }
+.tenet.is-lit .tenet__num::before {
+  background: radial-gradient(circle, #fffaf0 0 35%, var(--gold-hi) 75%);
+  border-color: var(--gold-hi);
+  transform: scale(1.25);
+  box-shadow:
+    0 0 6px var(--gold-hi),
+    0 0 16px rgba(236, 200, 120, 0.75),
+    0 0 32px rgba(236, 200, 120, 0.35);
 }
 
 .tenet__text {

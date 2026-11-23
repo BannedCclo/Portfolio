@@ -1,8 +1,9 @@
 /* ===========================================================
    sections/manifesto.js
-   Line-staggered text reveals plus the synapse rail, whose fill and pulse
-   chase the section's scroll position through damp() rather than tracking it
-   directly — same treatment the brain's poses get.
+   Line-staggered text reveals plus the rail — o mesmo da trajetória
+   (lib/binaryFlow.js + About.css): liga o primeiro ponto ao último, o
+   preenchimento persegue a rolagem via damp() (mesma taxa) e cada ponto
+   acende quando a ponta chega nele.
    =========================================================== */
 
 import { clamp01, damp, isNear } from "../motion.js";
@@ -18,7 +19,9 @@ export function initManifesto() {
   const section = document.getElementById("manifesto");
   if (!section) return () => {};
 
+  const track = section.querySelector(".manifesto__track");
   const rail = section.querySelector(".manifesto__rail");
+  const nums = [...section.querySelectorAll(".tenet__num")];
   const texts = [...section.querySelectorAll("[data-split-words]")];
   const tenets = [...section.querySelectorAll(".tenet")];
 
@@ -27,10 +30,34 @@ export function initManifesto() {
     texts.forEach(splitWords);
   });
 
+  /* Onde o fio começa e termina: do centro do primeiro ponto ao do último.
+     O ponto (Manifesto.css, .tenet__num::before) fica a 1.1em do topo do
+     número, com 7px de lado. O .tenet é posicionado (fica acima do fio),
+     então o offsetTop do número é relativo a ele, e o do .tenet ao
+     .manifesto__track — somando os dois, a posição no trilho. */
+  let centers = [];
+  const measure = () => {
+    centers = nums.map(
+      (n) =>
+        n.parentElement.offsetTop +
+        n.offsetTop +
+        parseFloat(getComputedStyle(n).fontSize) * 1.1 +
+        3.5,
+    );
+    if (centers.length < 2) return;
+    track.style.setProperty("--rail-top", `${centers[0]}px`);
+    track.style.setProperty("--rail-h", `${centers.at(-1) - centers[0]}px`);
+  };
+  measure();
+  document.fonts.ready.then(measure);
+
   let resizeTimer;
   const onResize = () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => texts.forEach(relineWords), 180);
+    resizeTimer = setTimeout(() => {
+      texts.forEach(relineWords);
+      measure();
+    }, 180);
   };
   addEventListener("resize", onResize);
 
@@ -50,6 +77,7 @@ export function initManifesto() {
   if (reduceMotion) {
     tenets.forEach((el) => el.classList.add("is-revealed"));
     rail?.style.setProperty("--fill", 1);
+    tenets.forEach((el) => el.classList.add("is-lit"));
     return () => {
       clearTimeout(resizeTimer);
       removeEventListener("resize", onResize);
@@ -57,20 +85,34 @@ export function initManifesto() {
     };
   }
 
-  /* the rail: fill follows how far the section has travelled past the middle
-     of the viewport; the pulse rides at the head of that fill and fades out
-     once the signal has arrived */
+  /* o trilho, com as mesmas regras do da trajetória (binaryFlow.js):
+     0 quando o topo do fio passa de 60% da tela, 1 quando o pé passa (ou
+     quando a página acaba, o que vier antes); o
+     valor desenhado persegue esse alvo com damp(…, 4.5). A ponta brilha
+     enquanto corre e se apaga ao chegar ao fim. */
   let fill = 0;
   const unsubscribeTick = onTick((dt) => {
     if (!isNear(section, 0.4)) return;
-    const rect = section.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const target = clamp01((vh * 0.62 - rect.top) / rect.height);
-    fill = damp(fill, target, dt, 1.8);
-    rail.style.setProperty("--fill", fill);
-    // brightest while travelling, gone once it reaches the end
-    const alpha = fill > 0.004 && fill < 0.995 ? 1 : 0;
-    rail.style.setProperty("--pulse-alpha", alpha);
+    const r = rail.getBoundingClientRect();
+    if (!r.height) return;
+    // Metas é a penúltima seção: a página pode acabar antes de o pé do fio
+    // chegar aos 60% da tela. Nesse caso o fim do fio passa a ser o fim da
+    // rolagem — o percurso encurta para caber no que ainda dá para rolar.
+    const line = window.innerHeight * 0.6;
+    const maxY = document.documentElement.scrollHeight - window.innerHeight;
+    const topAtEnd = r.top - (maxY - window.scrollY);
+    const span = Math.max(1, Math.min(r.height, line - topAtEnd));
+    const target = clamp01((line - r.top) / span);
+    fill = damp(fill, target, dt, 4.5);
+    if (Math.abs(fill - target) < 1e-4) fill = target;
+    rail.style.setProperty("--fill", fill.toFixed(4));
+    rail.style.setProperty("--pulse-alpha", fill > 0.004 && fill < 0.999 ? 1 : 0);
+    // cada ponto acende quando a ponta do preenchimento chega no centro dele
+    const tipY = centers[0] + fill * r.height;
+    tenets.forEach((el, i) => {
+      const lit = fill > 0 && tipY >= centers[i] - 0.5;
+      if (lit !== el.classList.contains("is-lit")) el.classList.toggle("is-lit", lit);
+    });
   });
 
   return () => {

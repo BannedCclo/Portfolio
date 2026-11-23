@@ -15,6 +15,22 @@ html {
   scroll-behavior: auto;
 }
 
+/* barras de rolagem nativas invisíveis em todo navegador (a rolagem em si
+   continua funcionando normalmente) — o indicador da página é a linha do
+   topo (.scroll-progress). Firefox e Chromium 121+ usam scrollbar-width;
+   Safari e Chromium antigos, o pseudo-elemento; IE/Edge legado, o -ms-. */
+html,
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 body {
   font-variant-numeric: tabular-nums;
   /* DM Serif Display só tem peso 400: sem isso o browser inventa um negrito
@@ -192,40 +208,26 @@ img {
   }
 }
 
-/* ---------- reading progress spine ----------
-   A single hairline down the right edge that fills as the whole document
-   scrolls — the page-wide descendant of the hero's own progress bar. */
-.spine {
+/* ---------- indicador de rolagem (components/ScrollProgress.jsx) ----------
+   O único da página: uma linha no topo da tela, por cima do nav, que enche
+   da esquerda para a direita com a rolagem do documento inteiro. Escala em
+   vez de largura — só composição, nada de layout a cada scroll. */
+.scroll-progress {
   position: fixed;
-  right: var(--gutter);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: var(--z-chrome);
-  width: 1px;
-  height: 30vh;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: calc(var(--z-nav) + 1);
+  height: 2px;
   background: var(--hairline);
   pointer-events: none;
 }
-.spine i {
+.scroll-progress i {
   display: block;
-  width: 100%;
-  height: calc(var(--read, 0) * 100%);
-  background: linear-gradient(to bottom, var(--gold-lo), var(--gold), var(--gold-hi));
-  transform-origin: top;
-}
-/* the work gallery has its own horizontal progress rail; two meters at once
-   is noise, and this one sits in the cards' path */
-.spine {
-  transition: opacity var(--dur-mid) var(--ease-out-expo);
-}
-body.is-galleried .spine,
-body.is-hero .spine {
-  opacity: 0;
-}
-@media (max-width: 980px) {
-  .spine {
-    display: none;
-  }
+  height: 100%;
+  background: linear-gradient(to right, var(--gold-lo), var(--gold), var(--gold-hi));
+  transform: scaleX(var(--read, 0));
+  transform-origin: left;
 }
 
 /* ---------- section chrome ---------- */
@@ -311,4 +313,15 @@ section.block {
 .fade-in.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* a corrente de 0s e 1s entre a trajetória e os projetos (lib/binaryFlow.js):
+   mesma camada do feixe do cérebro, por cima das seções */
+.binary-flow {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-beam);
+  pointer-events: none;
 }

@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "gsap": "^3.12.5",
+    "libphonenumber-js": "^1.13.17",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "resend": "^6.18.1",
+    "simple-icons": "^16.38.1",
     "three": "^0.160.0"
   },
   "devDependencies": {

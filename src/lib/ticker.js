@@ -29,7 +29,10 @@ document.addEventListener("visibilitychange", () => {
 function loop(now) {
   requestAnimationFrame(loop);
   if (!running) return;
-  const dt = Math.min((now - last) / 1000, 0.05);
+  // o timestamp do rAF pode ser anterior ao performance.now() lido no
+  // visibilitychange (o quadro foi agendado antes de a aba voltar): sem o
+  // piso em 0, o dt sai negativo e todo damp() anda para trás
+  const dt = Math.min(Math.max((now - last) / 1000, 0), 0.05);
   last = now;
   const t = now / 1000;
   for (const fn of tasks) fn(dt, t);

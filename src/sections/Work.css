@@ -5,11 +5,11 @@
    is the page's signature move, so it gets the same damped treatment as the
    brain: scroll sets the target x, js/sections/work.js chases it.
 
-   Below 820px the scroll-jacked pin is dropped — trapping a phone's vertical
-   scroll to drive horizontal travel is hostile — but the row itself stays
-   horizontal as a native, swipeable strip with scroll-snap. That keeps the
-   section's height constant no matter how many projects get added; a plain
-   vertical stack would instead make the page grow forever.
+   O pin vale em qualquer tela (celular, janela baixa, desktop): a galeria se
+   comporta igual em todas. Em telas baixas os cards se comprimem para caber
+   no pin (ver "cards em telas baixas" abaixo) em vez de o site trocar para
+   outro layout. Só o movimento reduzido usa a faixa nativa
+   (styles/reduced-motion.css).
    =========================================================== */
 
 .work {
@@ -22,7 +22,7 @@
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
-  /* clear the fixed nav, and leave room for the rail at the bottom */
+  /* clear the fixed nav, and leave a little room at the bottom */
   padding: clamp(5rem, 11vh, 7rem) 0 clamp(4rem, 9vh, 5.5rem);
 }
 
@@ -79,6 +79,39 @@
 .proj:hover {
   border-color: var(--gold-lo);
   box-shadow: 0 0 0 1px rgba(201, 173, 114, 0.18);
+}
+/* No hover, uma textura discreta de 0s e 1s dourados acende no fundo do
+   corpo do card: cada coluna escorre para baixo no seu ritmo, acelerando e
+   desacelerando um pouco a cada volta, e cada dígito pisca no seu tempo.
+   As colunas lentas são menores e mais apagadas (ficam "longe"); as
+   rápidas, maiores e mais claras. Tudo animação do próprio SVG (gerado por
+   script: a piscada de cada dígito divide a volta da coluna, para o loop
+   emendar sem salto).
+   O pseudo-elemento não posiciona o corpo (o link esticado do card precisa
+   continuar medindo o card inteiro): ele é absoluto em relação ao card, sem
+   `top` — começa onde o corpo começa — e alto de sobra, cortado pelo
+   overflow do card. z-index -1: no contexto do card (o transform cria um)
+   fica acima do fundo e abaixo do texto. */
+.proj__body::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 200%;
+  /* da borda de cima do corpo (o pseudo nasce dentro do padding) */
+  margin-top: calc(-1 * var(--sp-5));
+  z-index: -1;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='176'%20height='192'%3E%3Cg%20font-family='ui-monospace,Consolas,monospace'%20font-weight='600'%20fill='%23c9ad72'%20text-anchor='middle'%3E%3Cg%20font-size='9.7'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-78.7%3B0%200'%20keyTimes='0%3B0.76%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='11.27s'%20begin='-8.74s'%20repeatCount='indefinite'/%3E%3Ctext%20x='8'%20y='12'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.73%3B0.13'%20dur='3.757s'%20begin='-1.27s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='204'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.73%3B0.13'%20dur='3.757s'%20begin='-1.27s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='60'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.73%3B0.11'%20dur='3.757s'%20begin='-0.23s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='252'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.73%3B0.11'%20dur='3.757s'%20begin='-0.23s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='140'%20fill-opacity='0.08'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.73%3B0.08'%20dur='3.757s'%20begin='-0.44s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='332'%20fill-opacity='0.08'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.73%3B0.08'%20dur='3.757s'%20begin='-0.44s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='156'%20fill-opacity='0.17'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.17%3B0.73%3B0.17'%20dur='2.817s'%20begin='-1.63s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='8'%20y='348'%20fill-opacity='0.17'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.17%3B0.73%3B0.17'%20dur='2.817s'%20begin='-1.63s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='8.9'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-97.9%3B0%200'%20keyTimes='0%3B0.33%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='14.4s'%20begin='-8.93s'%20repeatCount='indefinite'/%3E%3Ctext%20x='24'%20y='12'%20fill-opacity='0.04'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.54%3B0.04'%20dur='4.8s'%20begin='-1.62s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='204'%20fill-opacity='0.04'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.54%3B0.04'%20dur='4.8s'%20begin='-1.62s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='28'%20fill-opacity='0.05'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.05%3B0.54%3B0.05'%20dur='3.6s'%20begin='-2.15s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='220'%20fill-opacity='0.05'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.05%3B0.54%3B0.05'%20dur='3.6s'%20begin='-2.15s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='44'%20fill-opacity='0.04'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.54%3B0.04'%20dur='7.2s'%20begin='-3.55s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='236'%20fill-opacity='0.04'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.54%3B0.04'%20dur='7.2s'%20begin='-3.55s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='60'%20fill-opacity='0.03'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.54%3B0.03'%20dur='3.6s'%20begin='-1.2s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='252'%20fill-opacity='0.03'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.54%3B0.03'%20dur='3.6s'%20begin='-1.2s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='76'%20fill-opacity='0.08'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.54%3B0.08'%20dur='2.88s'%20begin='-2.26s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='268'%20fill-opacity='0.08'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.54%3B0.08'%20dur='2.88s'%20begin='-2.26s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='108'%20fill-opacity='0.0'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.54%3B0.0'%20dur='4.8s'%20begin='-4.28s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='300'%20fill-opacity='0.0'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.54%3B0.0'%20dur='4.8s'%20begin='-4.28s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='124'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.54%3B0.1'%20dur='7.2s'%20begin='-2.42s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='316'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.54%3B0.1'%20dur='7.2s'%20begin='-2.42s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='140'%20fill-opacity='0.01'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.01%3B0.54%3B0.01'%20dur='2.88s'%20begin='-2.58s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='332'%20fill-opacity='0.01'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.01%3B0.54%3B0.01'%20dur='2.88s'%20begin='-2.58s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='172'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.54%3B0.11'%20dur='2.88s'%20begin='-2.75s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='24'%20y='364'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.54%3B0.11'%20dur='2.88s'%20begin='-2.75s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='9.6'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-84.5%3B0%200'%20keyTimes='0%3B0.57%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='11.92s'%20begin='-2.42s'%20repeatCount='indefinite'/%3E%3Ctext%20x='40'%20y='12'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.7%3B0.16'%20dur='5.96s'%20begin='-3.31s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='204'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.7%3B0.16'%20dur='5.96s'%20begin='-3.31s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='28'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.7%3B0.13'%20dur='3.973s'%20begin='-3.31s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='220'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.7%3B0.13'%20dur='3.973s'%20begin='-3.31s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='60'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.7%3B0.13'%20dur='3.973s'%20begin='-3.35s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='252'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.7%3B0.13'%20dur='3.973s'%20begin='-3.35s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='76'%20fill-opacity='0.15'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.7%3B0.15'%20dur='2.98s'%20begin='-2.85s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='268'%20fill-opacity='0.15'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.7%3B0.15'%20dur='2.98s'%20begin='-2.85s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='108'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.7%3B0.16'%20dur='5.96s'%20begin='-3.07s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='300'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.7%3B0.16'%20dur='5.96s'%20begin='-3.07s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='156'%20fill-opacity='0.12'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.7%3B0.12'%20dur='2.98s'%20begin='-2.68s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='40'%20y='348'%20fill-opacity='0.12'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.7%3B0.12'%20dur='2.98s'%20begin='-2.68s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='10.5'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-96.0%3B0%200'%20keyTimes='0%3B0.48%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='8.24s'%20begin='-2.54s'%20repeatCount='indefinite'/%3E%3Ctext%20x='56'%20y='12'%20fill-opacity='0.0'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.89%3B0.0'%20dur='4.12s'%20begin='-1.22s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='204'%20fill-opacity='0.0'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.89%3B0.0'%20dur='4.12s'%20begin='-1.22s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='28'%20fill-opacity='0.17'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.17%3B0.89%3B0.17'%20dur='4.12s'%20begin='-3.97s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='220'%20fill-opacity='0.17'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.17%3B0.89%3B0.17'%20dur='4.12s'%20begin='-3.97s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='44'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.89%3B0.1'%20dur='4.12s'%20begin='-3.39s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='236'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.89%3B0.1'%20dur='4.12s'%20begin='-3.39s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='60'%20fill-opacity='0.09'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.09%3B0.89%3B0.09'%20dur='2.06s'%20begin='-0.88s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='252'%20fill-opacity='0.09'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.09%3B0.89%3B0.09'%20dur='2.06s'%20begin='-0.88s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='140'%20fill-opacity='0.16'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.89%3B0.16'%20dur='1.648s'%20begin='-1.6s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='332'%20fill-opacity='0.16'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.89%3B0.16'%20dur='1.648s'%20begin='-1.6s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='156'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.89%3B0.16'%20dur='2.06s'%20begin='-0.56s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='348'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.89%3B0.16'%20dur='2.06s'%20begin='-0.56s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='188'%20fill-opacity='0.09'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.09%3B0.89%3B0.09'%20dur='2.747s'%20begin='-0.07s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='56'%20y='380'%20fill-opacity='0.09'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.09%3B0.89%3B0.09'%20dur='2.747s'%20begin='-0.07s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='8.2'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-86.4%3B0%200'%20keyTimes='0%3B0.62%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='16.88s'%20begin='-2.66s'%20repeatCount='indefinite'/%3E%3Ctext%20x='72'%20y='44'%20fill-opacity='0.02'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.02%3B0.4%3B0.02'%20dur='3.376s'%20begin='-3.06s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='236'%20fill-opacity='0.02'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.02%3B0.4%3B0.02'%20dur='3.376s'%20begin='-3.06s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='108'%20fill-opacity='0.03'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.4%3B0.03'%20dur='3.376s'%20begin='-1.91s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='300'%20fill-opacity='0.03'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.4%3B0.03'%20dur='3.376s'%20begin='-1.91s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='140'%20fill-opacity='0.0'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.4%3B0.0'%20dur='3.376s'%20begin='-1.55s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='332'%20fill-opacity='0.0'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.4%3B0.0'%20dur='3.376s'%20begin='-1.55s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='156'%20fill-opacity='0.02'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.02%3B0.4%3B0.02'%20dur='3.376s'%20begin='-2.84s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='348'%20fill-opacity='0.02'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.02%3B0.4%3B0.02'%20dur='3.376s'%20begin='-2.84s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='188'%20fill-opacity='0.0'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.4%3B0.0'%20dur='8.44s'%20begin='-6.97s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='72'%20y='380'%20fill-opacity='0.0'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.0%3B0.4%3B0.0'%20dur='8.44s'%20begin='-6.97s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='9.5'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-111.4%3B0%200'%20keyTimes='0%3B0.45%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='11.8s'%20begin='-9.96s'%20repeatCount='indefinite'/%3E%3Ctext%20x='88'%20y='12'%20fill-opacity='0.12'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.68%3B0.12'%20dur='2.95s'%20begin='-2.59s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='204'%20fill-opacity='0.12'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.68%3B0.12'%20dur='2.95s'%20begin='-2.59s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='44'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.68%3B0.13'%20dur='2.95s'%20begin='-1.86s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='236'%20fill-opacity='0.13'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.13%3B0.68%3B0.13'%20dur='2.95s'%20begin='-1.86s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='76'%20fill-opacity='0.04'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.68%3B0.04'%20dur='3.933s'%20begin='-2.39s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='268'%20fill-opacity='0.04'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.68%3B0.04'%20dur='3.933s'%20begin='-2.39s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='92'%20fill-opacity='0.06'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.06%3B0.68%3B0.06'%20dur='2.95s'%20begin='-0.21s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='284'%20fill-opacity='0.06'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.06%3B0.68%3B0.06'%20dur='2.95s'%20begin='-0.21s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='140'%20fill-opacity='0.15'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.68%3B0.15'%20dur='5.9s'%20begin='-0.21s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='332'%20fill-opacity='0.15'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.68%3B0.15'%20dur='5.9s'%20begin='-0.21s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='172'%20fill-opacity='0.1'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.68%3B0.1'%20dur='2.36s'%20begin='-0.59s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='88'%20y='364'%20fill-opacity='0.1'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.68%3B0.1'%20dur='2.36s'%20begin='-0.59s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='9.3'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-103.7%3B0%200'%20keyTimes='0%3B0.44%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='12.67s'%20begin='-7.49s'%20repeatCount='indefinite'/%3E%3Ctext%20x='104'%20y='28'%20fill-opacity='0.04'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.64%3B0.04'%20dur='6.335s'%20begin='-1.46s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='220'%20fill-opacity='0.04'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.64%3B0.04'%20dur='6.335s'%20begin='-1.46s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='44'%20fill-opacity='0.15'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.64%3B0.15'%20dur='4.223s'%20begin='-0.03s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='236'%20fill-opacity='0.15'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.64%3B0.15'%20dur='4.223s'%20begin='-0.03s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='60'%20fill-opacity='0.04'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.64%3B0.04'%20dur='2.534s'%20begin='-1.69s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='252'%20fill-opacity='0.04'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.64%3B0.04'%20dur='2.534s'%20begin='-1.69s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='92'%20fill-opacity='0.08'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.64%3B0.08'%20dur='6.335s'%20begin='-4.59s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='284'%20fill-opacity='0.08'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.64%3B0.08'%20dur='6.335s'%20begin='-4.59s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='124'%20fill-opacity='0.06'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.06%3B0.64%3B0.06'%20dur='4.223s'%20begin='-3.33s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='316'%20fill-opacity='0.06'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.06%3B0.64%3B0.06'%20dur='4.223s'%20begin='-3.33s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='140'%20fill-opacity='0.12'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.64%3B0.12'%20dur='4.223s'%20begin='-0.15s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='332'%20fill-opacity='0.12'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.64%3B0.12'%20dur='4.223s'%20begin='-0.15s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='188'%20fill-opacity='0.08'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.64%3B0.08'%20dur='4.223s'%20begin='-2.94s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='104'%20y='380'%20fill-opacity='0.08'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.64%3B0.08'%20dur='4.223s'%20begin='-2.94s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='10.1'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-96.0%3B0%200'%20keyTimes='0%3B0.51%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='10.5s'%20begin='-3.29s'%20repeatCount='indefinite'/%3E%3Ctext%20x='120'%20y='44'%20fill-opacity='0.03'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.81%3B0.03'%20dur='5.25s'%20begin='-0.66s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='236'%20fill-opacity='0.03'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.81%3B0.03'%20dur='5.25s'%20begin='-0.66s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='124'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.81%3B0.1'%20dur='2.1s'%20begin='-0.17s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='316'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.81%3B0.1'%20dur='2.1s'%20begin='-0.17s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='156'%20fill-opacity='0.14'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.14%3B0.81%3B0.14'%20dur='3.5s'%20begin='-2.54s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='348'%20fill-opacity='0.14'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.14%3B0.81%3B0.14'%20dur='3.5s'%20begin='-2.54s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='172'%20fill-opacity='0.08'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.81%3B0.08'%20dur='2.625s'%20begin='-1.38s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='120'%20y='364'%20fill-opacity='0.08'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.81%3B0.08'%20dur='2.625s'%20begin='-1.38s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='9.6'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-99.8%3B0%200'%20keyTimes='0%3B0.52%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='11.79s'%20begin='-5.89s'%20repeatCount='indefinite'/%3E%3Ctext%20x='136'%20y='12'%20fill-opacity='0.08'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.7%3B0.08'%20dur='2.947s'%20begin='-1.86s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='204'%20fill-opacity='0.08'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.08%3B0.7%3B0.08'%20dur='2.947s'%20begin='-1.86s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='28'%20fill-opacity='0.03'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.7%3B0.03'%20dur='2.358s'%20begin='-1.96s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='220'%20fill-opacity='0.03'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.03%3B0.7%3B0.03'%20dur='2.358s'%20begin='-1.96s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='44'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.7%3B0.1'%20dur='2.947s'%20begin='-2.31s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='236'%20fill-opacity='0.1'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.7%3B0.1'%20dur='2.947s'%20begin='-2.31s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='76'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.7%3B0.16'%20dur='3.93s'%20begin='-1.65s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='268'%20fill-opacity='0.16'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.7%3B0.16'%20dur='3.93s'%20begin='-1.65s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='108'%20fill-opacity='0.15'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.7%3B0.15'%20dur='2.947s'%20begin='-2.02s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='136'%20y='300'%20fill-opacity='0.15'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.15%3B0.7%3B0.15'%20dur='2.947s'%20begin='-2.02s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='10.9'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-113.3%3B0%200'%20keyTimes='0%3B0.36%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='7.56s'%20begin='-1.77s'%20repeatCount='indefinite'/%3E%3Ctext%20x='152'%20y='44'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.99%3B0.11'%20dur='3.78s'%20begin='-3.41s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='236'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.99%3B0.11'%20dur='3.78s'%20begin='-3.41s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='76'%20fill-opacity='0.09'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.09%3B0.99%3B0.09'%20dur='3.78s'%20begin='-2.21s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='268'%20fill-opacity='0.09'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.09%3B0.99%3B0.09'%20dur='3.78s'%20begin='-2.21s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='108'%20fill-opacity='0.12'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.99%3B0.12'%20dur='2.52s'%20begin='-2.37s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='300'%20fill-opacity='0.12'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.12%3B0.99%3B0.12'%20dur='2.52s'%20begin='-2.37s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='124'%20fill-opacity='0.05'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.05%3B0.99%3B0.05'%20dur='1.512s'%20begin='-1.29s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='316'%20fill-opacity='0.05'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.05%3B0.99%3B0.05'%20dur='1.512s'%20begin='-1.29s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='140'%20fill-opacity='0.07'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.07%3B0.99%3B0.07'%20dur='1.89s'%20begin='-0.96s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='332'%20fill-opacity='0.07'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.07%3B0.99%3B0.07'%20dur='1.89s'%20begin='-0.96s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='156'%20fill-opacity='0.11'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.99%3B0.11'%20dur='1.512s'%20begin='-0.8s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='152'%20y='348'%20fill-opacity='0.11'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.99%3B0.11'%20dur='1.512s'%20begin='-0.8s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3Cg%20font-size='9.5'%3E%3CanimateTransform%20attributeName='transform'%20type='translate'%20values='0%20-192%3B0%20-90.2%3B0%200'%20keyTimes='0%3B0.59%3B1'%20calcMode='spline'%20keySplines='.3%20.15%20.7%20.85%3B.3%20.15%20.7%20.85'%20dur='12.52s'%20begin='-6.51s'%20repeatCount='indefinite'/%3E%3Ctext%20x='168'%20y='12'%20fill-opacity='0.04'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.67%3B0.04'%20dur='2.504s'%20begin='-2.22s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='204'%20fill-opacity='0.04'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.04%3B0.67%3B0.04'%20dur='2.504s'%20begin='-2.22s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='28'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.67%3B0.11'%20dur='6.26s'%20begin='-4.98s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='220'%20fill-opacity='0.11'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.11%3B0.67%3B0.11'%20dur='6.26s'%20begin='-4.98s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='44'%20fill-opacity='0.06'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.06%3B0.67%3B0.06'%20dur='3.13s'%20begin='-1.94s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='236'%20fill-opacity='0.06'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.06%3B0.67%3B0.06'%20dur='3.13s'%20begin='-1.94s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='92'%20fill-opacity='0.05'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.05%3B0.67%3B0.05'%20dur='2.504s'%20begin='-2.1s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='284'%20fill-opacity='0.05'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.05%3B0.67%3B0.05'%20dur='2.504s'%20begin='-2.1s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='124'%20fill-opacity='0.1'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.67%3B0.1'%20dur='3.13s'%20begin='-0.48s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='316'%20fill-opacity='0.1'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.1%3B0.67%3B0.1'%20dur='3.13s'%20begin='-0.48s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='156'%20fill-opacity='0.16'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.67%3B0.16'%20dur='3.13s'%20begin='-1.9s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='348'%20fill-opacity='0.16'%3E0%3Canimate%20attributeName='fill-opacity'%20values='0.16%3B0.67%3B0.16'%20dur='3.13s'%20begin='-1.9s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='188'%20fill-opacity='0.14'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.14%3B0.67%3B0.14'%20dur='3.13s'%20begin='-2.42s'%20repeatCount='indefinite'/%3E%3C/text%3E%3Ctext%20x='168'%20y='380'%20fill-opacity='0.14'%3E1%3Canimate%20attributeName='fill-opacity'%20values='0.14%3B0.67%3B0.14'%20dur='3.13s'%20begin='-2.42s'%20repeatCount='indefinite'/%3E%3C/text%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0 / 176px 192px repeat;
+  /* nasce transparente junto à imagem e fica cheio logo abaixo */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 7rem);
+  mask-image: linear-gradient(to bottom, transparent, #000 7rem);
+  opacity: 0;
+  transition: opacity var(--dur-mid) var(--ease-out-expo);
+}
+.proj:hover .proj__body::before,
+.proj:has(.proj__link:focus-visible) .proj__body::before {
+  opacity: 0.32;
 }
 
 .proj__visual {
@@ -264,163 +297,214 @@
   color: var(--gold);
 }
 
-/* ---------- horizontal progress ---------- */
-/* The rail itself is a generous, invisible hit area (drag needs more than a
-   1px line to grab) — the visible hairline is its own pseudo-element rather
-   than the rail's own height/background, since box-sizing: border-box (see
-   base.css) means padding can't grow a click target past a 1px-tall box.
-   The extra height is added below the original 1px position only (bottom
-   shifted down by the same amount height grows), not centred around it —
-   centring would have shifted the visible line itself upward, which on
-   shorter viewports pushed it up into the cards above. */
-.work__rail {
-  --hit-pad: 15px;
-  position: absolute;
-  left: var(--gutter);
-  right: var(--gutter);
-  bottom: calc(clamp(2rem, 6vh, 3.5rem) - var(--hit-pad));
-  height: calc(1px + var(--hit-pad));
-  cursor: pointer;
-  /* stops touch from scrolling the page instead of starting a drag the
-     instant a finger lands on the rail */
-  touch-action: none;
-}
-.work__rail::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--hairline);
-}
-.work__rail i {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 1px;
-  width: calc(var(--x, 0) * 100%);
-  background: var(--gold-metal);
-  pointer-events: none;
-}
-
-/* the draggable handle — discreet at rest, a little more present under the
-   pointer so it still reads as grabbable without competing with the cards.
-   Pointer events land on the rail itself (see lib/sections/work.js), not
-   this dot, so it stays passive here. */
-.work__thumb {
-  position: absolute;
-  top: 0;
-  left: calc(var(--x, 0) * 100%);
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--gold-metal);
-  box-shadow: 0 0 0 3px var(--bg);
-  transform: translate(-50%, -50%) scale(0.85);
-  opacity: 0.75;
-  pointer-events: none;
-  transition:
-    opacity var(--dur-fast) ease,
-    transform var(--dur-fast) ease;
-}
-.work__rail:hover .work__thumb {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-.work__rail.is-dragging {
-  cursor: grabbing;
-}
-.work__rail.is-dragging .work__thumb {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 /* ===========================================================
-   desktop pin containment
+   pin containment
 
-   Mirrors lib/sections/work.js's DESKTOP_QUERY exactly — that's the only
-   place the pin actually gets created. The rules above size header+track+
-   rail as one block that .work__pin just centres, with nothing capping the
-   track's height — a card with enough outcome text or wrapped stack tags
-   can end up taller than the pin itself, and centring spills the excess
-   equally above and below. The rail's `bottom` offset was computed assuming
-   the track never does that, so the spillover lands the rail on top of the
-   cards' clipped bottom edge instead of below them.
+   The rules above size header+track as one block that .work__pin just
+   centres, with nothing capping the track's height — a card with enough
+   outcome text or wrapped stack tags can end up taller than the pin itself,
+   and centring spills the excess equally above and below.
 
    Here the track is given a hard height (the pin's remaining space after
-   the header and the rail, which are both fixed-size flex items) instead of
-   an assumed one, and the rail is a real flex child after the track instead
-   of an absolutely-positioned guess — so it can never overlap. A card
-   taller than that gets clipped by its own already-existing
-   `overflow: hidden` (its rounded border stays intact) rather than by the
-   pin's clip landing mid-page.
+   the header, a fixed-size flex item) instead of an assumed one — so it can
+   never overlap. Vale em
+   qualquer tamanho de tela, como o pin (lib/sections/work.js).
    =========================================================== */
-@media (min-width: 820px) and (min-height: 820px) {
-  .work__pin {
-    justify-content: flex-start;
-    padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+.work__pin {
+  justify-content: flex-start;
+  padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+}
+.work__track {
+  flex: 1 1 0%;
+  min-height: 0;
+  align-items: center;
+}
+.proj {
+  max-height: 100%;
+}
+
+/* ---------- cards em telas baixas ----------
+   O card nunca passa da altura do trilho (max-height acima). Quando falta
+   espaço, quem cede é a imagem: ela deixa de manter os 16:9 e encolhe (até
+   um mínimo), enquanto o texto fica inteiro. Em telas bem baixas o texto
+   também aperta: a descrição vira 3 linhas e os espaçamentos diminuem. */
+.proj__visual {
+  flex: 0 1 auto;
+  min-height: 3.5rem;
+}
+.proj__body {
+  flex: 1 0 auto;
+}
+@media (max-height: 720px) {
+  .work__head {
+    margin-bottom: var(--sp-5);
   }
-  .work__track {
-    flex: 1 1 0%;
-    min-height: 0;
-    align-items: center;
+  .work__title {
+    font-size: var(--fs-5);
   }
-  .proj {
-    max-height: 100%;
+  .proj__body {
+    padding: var(--sp-4);
+    gap: var(--sp-2);
   }
-  .work__rail {
+  .proj__outcome {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
     flex: none;
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    margin: clamp(1.25rem, 3vh, 2rem) var(--gutter) 0;
+  }
+  .proj__more {
+    margin-top: var(--sp-2);
+    padding-top: var(--sp-2);
+  }
+}
+@media (max-height: 560px) {
+  .proj__stack {
+    display: none;
+  }
+  .proj__outcome {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }
 
 /* ===========================================================
-   vertical fallback
+   impressão pelos dígitos — lib/binaryFlow.js
 
-   Also triggers below 820px of *height*, not just width (see
-   lib/sections/work.js's DESKTOP_QUERY) — a pinned, centred card can easily
-   be taller than a short window leaves room for, and the excess spills out
-   both edges of the pin's clipped box, landing right on the rail. Below that
-   height the whole pinned/rail treatment is dropped for the same plain
-   scrollable strip narrow widths already get.
+   A corrente de 0s e 1s que sai da linha do tempo (Sobre) pousa nos cards;
+   `--form` (0..1) diz quanto de cada card já foi impresso. O card aparece
+   recortado até essa altura, com uma linha dourada na borda de impressão.
+   Só vale com `.is-printed` (posta pelo JS): sem JS ou com movimento
+   reduzido os cards ficam inteiros.
    =========================================================== */
-@media (max-width: 819px), (max-height: 819px) {
-  .work__pin {
-    height: auto;
-    display: block;
-    overflow: visible;
-    padding: clamp(4rem, 10vh, 6rem) 0;
+.work.is-printed .proj {
+  /* margem de 28px para fora: com o card inteiro, o recorte não pode comer
+     o outline de foco, a sombra do hover nem o brilho de "pronto" */
+  clip-path: inset(
+    -28px -28px calc((1 - var(--form, 1)) * (100% + 28px) - 28px) -28px
+  );
+}
+/* A borda de impressão: uma faixa de 0s e 1s dourados logo acima de onde o
+   card já chegou. Ela tem o fundo do card por baixo dos dígitos, então
+   cobre o conteúdo ali: embaixo o card ainda é só dígito e, subindo, a
+   faixa se desfaz (máscara) e o conteúdo de verdade aparece — os dígitos
+   "viram" o card conforme a impressão desce. A textura anda na direção
+   contrária à faixa (--form), então os dígitos ficam parados em relação ao
+   card enquanto a faixa passa por eles, em vez de escorregarem junto. */
+.work.is-printed .proj::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--form, 1) * 100% - 56px);
+  height: 56px;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='120'%20height='60'%3E%3Cg%20font-family='ui-monospace,Consolas,monospace'%20font-size='10'%20font-weight='600'%20fill='%23dcc58f'%20text-anchor='middle'%3E%3Ctext%20x='5'%20y='10'%20fill-opacity='.75'%3E1%3C/text%3E%3Ctext%20x='15'%20y='10'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='25'%20y='10'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='35'%20y='10'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='45'%20y='10'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='55'%20y='10'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='65'%20y='10'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='75'%20y='10'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='85'%20y='10'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='95'%20y='10'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='105'%20y='10'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='115'%20y='10'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='5'%20y='22'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='15'%20y='22'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='25'%20y='22'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='35'%20y='22'%20fill-opacity='.75'%3E1%3C/text%3E%3Ctext%20x='45'%20y='22'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='55'%20y='22'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='65'%20y='22'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='75'%20y='22'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='85'%20y='22'%20fill-opacity='.5'%3E1%3C/text%3E%3Ctext%20x='95'%20y='22'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='105'%20y='22'%20fill-opacity='.5'%3E1%3C/text%3E%3Ctext%20x='115'%20y='22'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='5'%20y='34'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='15'%20y='34'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='25'%20y='34'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='35'%20y='34'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='45'%20y='34'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='55'%20y='34'%20fill-opacity='.5'%3E0%3C/text%3E%3Ctext%20x='65'%20y='34'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='75'%20y='34'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='85'%20y='34'%20fill-opacity='.5'%3E0%3C/text%3E%3Ctext%20x='95'%20y='34'%20fill-opacity='.5'%3E1%3C/text%3E%3Ctext%20x='105'%20y='34'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='115'%20y='34'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='5'%20y='46'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='15'%20y='46'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='25'%20y='46'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='35'%20y='46'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='45'%20y='46'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='55'%20y='46'%20fill-opacity='.5'%3E1%3C/text%3E%3Ctext%20x='65'%20y='46'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='75'%20y='46'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='85'%20y='46'%20fill-opacity='.5'%3E0%3C/text%3E%3Ctext%20x='95'%20y='46'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='105'%20y='46'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='115'%20y='46'%20fill-opacity='1'%3E1%3C/text%3E%3Ctext%20x='5'%20y='58'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='15'%20y='58'%20fill-opacity='.5'%3E1%3C/text%3E%3Ctext%20x='25'%20y='58'%20fill-opacity='.85'%3E0%3C/text%3E%3Ctext%20x='35'%20y='58'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='45'%20y='58'%20fill-opacity='.85'%3E1%3C/text%3E%3Ctext%20x='55'%20y='58'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='65'%20y='58'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='75'%20y='58'%20fill-opacity='.75'%3E0%3C/text%3E%3Ctext%20x='85'%20y='58'%20fill-opacity='1'%3E0%3C/text%3E%3Ctext%20x='95'%20y='58'%20fill-opacity='.75'%3E1%3C/text%3E%3Ctext%20x='105'%20y='58'%20fill-opacity='.5'%3E1%3C/text%3E%3Ctext%20x='115'%20y='58'%20fill-opacity='.75'%3E0%3C/text%3E%3C/g%3E%3C/svg%3E")
+      0 calc(var(--form, 1) * -520px) / 120px 60px repeat,
+    var(--surface);
+  /* cada coluna de dígitos sobe até uma altura própria (as vizinhas são
+     parecidas, nenhuma igual) e se desfaz no conteúdo a partir dali */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='56'%20viewBox='0%200%20240%2056'%20preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='0'%20y2='1'%3E%3Cstop%20offset='0'%20stop-opacity='0'/%3E%3Cstop%20offset='.55'%20stop-opacity='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='0'%20y='15.0'%20width='10'%20height='41.0'%20fill='url(%23g)'/%3E%3Crect%20x='10'%20y='13.8'%20width='10'%20height='42.2'%20fill='url(%23g)'/%3E%3Crect%20x='20'%20y='5.2'%20width='10'%20height='50.8'%20fill='url(%23g)'/%3E%3Crect%20x='30'%20y='5.9'%20width='10'%20height='50.1'%20fill='url(%23g)'/%3E%3Crect%20x='40'%20y='5.7'%20width='10'%20height='50.3'%20fill='url(%23g)'/%3E%3Crect%20x='50'%20y='4.0'%20width='10'%20height='52.0'%20fill='url(%23g)'/%3E%3Crect%20x='60'%20y='10.3'%20width='10'%20height='45.7'%20fill='url(%23g)'/%3E%3Crect%20x='70'%20y='10.1'%20width='10'%20height='45.9'%20fill='url(%23g)'/%3E%3Crect%20x='80'%20y='7.5'%20width='10'%20height='48.5'%20fill='url(%23g)'/%3E%3Crect%20x='90'%20y='1.6'%20width='10'%20height='54.4'%20fill='url(%23g)'/%3E%3Crect%20x='100'%20y='9.8'%20width='10'%20height='46.2'%20fill='url(%23g)'/%3E%3Crect%20x='110'%20y='13.7'%20width='10'%20height='42.3'%20fill='url(%23g)'/%3E%3Crect%20x='120'%20y='22.0'%20width='10'%20height='34.0'%20fill='url(%23g)'/%3E%3Crect%20x='130'%20y='15.7'%20width='10'%20height='40.3'%20fill='url(%23g)'/%3E%3Crect%20x='140'%20y='11.8'%20width='10'%20height='44.2'%20fill='url(%23g)'/%3E%3Crect%20x='150'%20y='21.1'%20width='10'%20height='34.9'%20fill='url(%23g)'/%3E%3Crect%20x='160'%20y='11.3'%20width='10'%20height='44.7'%20fill='url(%23g)'/%3E%3Crect%20x='170'%20y='2.0'%20width='10'%20height='54.0'%20fill='url(%23g)'/%3E%3Crect%20x='180'%20y='0.0'%20width='10'%20height='56.0'%20fill='url(%23g)'/%3E%3Crect%20x='190'%20y='0.0'%20width='10'%20height='56.0'%20fill='url(%23g)'/%3E%3Crect%20x='200'%20y='6.9'%20width='10'%20height='49.1'%20fill='url(%23g)'/%3E%3Crect%20x='210'%20y='16.7'%20width='10'%20height='39.3'%20fill='url(%23g)'/%3E%3Crect%20x='220'%20y='16.1'%20width='10'%20height='39.9'%20fill='url(%23g)'/%3E%3Crect%20x='230'%20y='25.0'%20width='10'%20height='31.0'%20fill='url(%23g)'/%3E%3C/svg%3E") 0 0 / 240px 100% repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='56'%20viewBox='0%200%20240%2056'%20preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='0'%20y2='1'%3E%3Cstop%20offset='0'%20stop-opacity='0'/%3E%3Cstop%20offset='.55'%20stop-opacity='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='0'%20y='15.0'%20width='10'%20height='41.0'%20fill='url(%23g)'/%3E%3Crect%20x='10'%20y='13.8'%20width='10'%20height='42.2'%20fill='url(%23g)'/%3E%3Crect%20x='20'%20y='5.2'%20width='10'%20height='50.8'%20fill='url(%23g)'/%3E%3Crect%20x='30'%20y='5.9'%20width='10'%20height='50.1'%20fill='url(%23g)'/%3E%3Crect%20x='40'%20y='5.7'%20width='10'%20height='50.3'%20fill='url(%23g)'/%3E%3Crect%20x='50'%20y='4.0'%20width='10'%20height='52.0'%20fill='url(%23g)'/%3E%3Crect%20x='60'%20y='10.3'%20width='10'%20height='45.7'%20fill='url(%23g)'/%3E%3Crect%20x='70'%20y='10.1'%20width='10'%20height='45.9'%20fill='url(%23g)'/%3E%3Crect%20x='80'%20y='7.5'%20width='10'%20height='48.5'%20fill='url(%23g)'/%3E%3Crect%20x='90'%20y='1.6'%20width='10'%20height='54.4'%20fill='url(%23g)'/%3E%3Crect%20x='100'%20y='9.8'%20width='10'%20height='46.2'%20fill='url(%23g)'/%3E%3Crect%20x='110'%20y='13.7'%20width='10'%20height='42.3'%20fill='url(%23g)'/%3E%3Crect%20x='120'%20y='22.0'%20width='10'%20height='34.0'%20fill='url(%23g)'/%3E%3Crect%20x='130'%20y='15.7'%20width='10'%20height='40.3'%20fill='url(%23g)'/%3E%3Crect%20x='140'%20y='11.8'%20width='10'%20height='44.2'%20fill='url(%23g)'/%3E%3Crect%20x='150'%20y='21.1'%20width='10'%20height='34.9'%20fill='url(%23g)'/%3E%3Crect%20x='160'%20y='11.3'%20width='10'%20height='44.7'%20fill='url(%23g)'/%3E%3Crect%20x='170'%20y='2.0'%20width='10'%20height='54.0'%20fill='url(%23g)'/%3E%3Crect%20x='180'%20y='0.0'%20width='10'%20height='56.0'%20fill='url(%23g)'/%3E%3Crect%20x='190'%20y='0.0'%20width='10'%20height='56.0'%20fill='url(%23g)'/%3E%3Crect%20x='200'%20y='6.9'%20width='10'%20height='49.1'%20fill='url(%23g)'/%3E%3Crect%20x='210'%20y='16.7'%20width='10'%20height='39.3'%20fill='url(%23g)'/%3E%3Crect%20x='220'%20y='16.1'%20width='10'%20height='39.9'%20fill='url(%23g)'/%3E%3Crect%20x='230'%20y='25.0'%20width='10'%20height='31.0'%20fill='url(%23g)'/%3E%3C/svg%3E") 0 0 / 240px 100% repeat-x;
+  /* só enquanto imprime: some quando o card está vazio ou pronto */
+  opacity: calc(min(var(--form, 1), 1 - var(--form, 1)) * 40);
+}
+
+/* ---------- card pronto: a borda acende de baixo para cima ----------
+   Quando o último dígito pousa (lib/binaryFlow.js põe .is-forged), o card
+   acabou de se completar pela base. Dali parte um pulso claro que sobe
+   pelas duas bordas laterais até o topo, e atrás dele a borda vai ficando
+   acesa em dourado — o mesmo desenho da linha do tempo (preenchimento +
+   ponta brilhante). No topo o pulso se apaga e a borda acesa esmaece de
+   volta ao normal. Roda uma vez; desfazendo o card (rolando de volta), a
+   classe sai e o efeito pode voltar.
+   --rise (0..1) é registrado para poder ser animado: o tamanho do
+   preenchimento e a posição do pulso saem dele, então andam juntos. */
+@property --rise {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+.work.is-printed .proj::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  /* só o contorno: o miolo é recortado pela máscara, sobra um anel de
+     2px colado à borda */
+  padding: 2px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  --rise: 0;
+  /* em cima: o pulso, uma faixa de 90px centrada na frente do
+     preenchimento; embaixo: o preenchimento, que cresce a partir da base */
+  background:
+    linear-gradient(
+        to top,
+        transparent,
+        rgba(255, 243, 214, 0.5) 30%,
+        #fff 50%,
+        rgba(255, 243, 214, 0.5) 70%,
+        transparent
+      )
+      0 calc((1 - var(--rise)) * 100% + (1 - var(--rise)) * 90px - 45px) / 100% 90px
+      no-repeat,
+    linear-gradient(to top, rgba(201, 173, 114, 0.55), var(--gold))
+      0 100% / 100% calc(var(--rise) * 100%) no-repeat;
+  opacity: 0;
+}
+.work.is-printed .proj {
+  --forge-dur: 1.5s;
+}
+.work.is-printed .proj.is-forged::before {
+  animation: proj-edge var(--forge-dur) linear both;
+}
+.work.is-printed .proj.is-forged {
+  /* sem fill-mode: terminado, o card volta às próprias regras (o hover
+     dourado da borda continua funcionando) */
+  animation: proj-glow var(--forge-dur) cubic-bezier(0.4, 0, 0.3, 1);
+}
+@keyframes proj-edge {
+  0% {
+    --rise: 0;
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.35, 1);
   }
-  .work__track {
-    transform: none !important;
-    gap: var(--sp-4);
-    overflow-x: auto;
-    overflow-y: visible;
-    scroll-snap-type: x proximity;
-    scroll-padding-left: var(--gutter);
-    -webkit-overflow-scrolling: touch;
-    /* room so the snapped card's shadow/outline isn't clipped by the
-       scroll container, and so the strip doesn't sit flush on the edge */
-    padding-bottom: var(--sp-2);
-    scrollbar-width: none;
+  6% {
+    opacity: 1;
   }
-  .work__track::-webkit-scrollbar {
-    display: none;
+  /* o pulso chega ao topo (~0,8s) */
+  55% {
+    --rise: 1;
+    opacity: 1;
   }
-  .proj {
-    /* narrower than the viewport so the next card peeks in, signalling that
-       the strip is swipeable */
-    width: min(80vw, 22rem);
-    scroll-snap-align: start;
-    transform: none !important;
-    opacity: 1 !important;
-  }
-  .work__rail {
-    display: none;
+  100% {
+    --rise: 1;
+    opacity: 0;
   }
 }
+/* quando o pulso chega ao topo, um halo suave em volta do card acende e
+   esmaece junto com a borda (antes disso nada, para não dourar a borda
+   inteira de uma vez) */
+@keyframes proj-glow {
+  0%,
+  35% {
+    box-shadow: none;
+  }
+  58% {
+    box-shadow:
+      0 0 0 1px rgba(201, 173, 114, 0.3),
+      0 0 22px rgba(201, 173, 114, 0.28);
+  }
+}
+

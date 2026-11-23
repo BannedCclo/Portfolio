@@ -27,10 +27,6 @@ export default function Hero() {
         <span className="brain-hint__bar" />
       </div>
 
-      <div className="brain-progress" id="brainProgress" aria-hidden="true">
-        <i />
-      </div>
-
       <div className="brain-page" id="brainPage0">
         <p className="brain-eyebrow">{hero.page0.eyebrow}</p>
         <h2 className="brain-title">

@@ -1,4 +1,9 @@
 import { Resend } from "resend";
+import {
+  getCountries,
+  getCountryCallingCode,
+  validatePhoneNumberLength,
+} from "libphonenumber-js";
 
 /*
  * Vercel Serverless Function — POST /api/contact
@@ -23,22 +28,37 @@ const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "Portfólio <onboarding@res
 const LIMITS = {
   firstName: 80,
   lastName: 80,
-  phone: 16,
+  phone: 25,
   email: 254,
   message: 5000,
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Formato exato que a máscara do form sempre produz: (DD) DDDD-DDDD (fixo)
-// ou (DD) DDDDD-DDDD (celular). Um POST direto (sem passar pelo form) que
-// não bater com isso é rejeitado — é intencional, não frouxo por acidente.
-const PHONE_RE = /^\(\d{2}\) \d{4,5}-\d{4}$/;
+// O telefone vem no formato nacional do país escolhido no select de DDI
+// (src/lib/phone.js): só dígitos, espaços, parênteses e hífens, e com um
+// número de dígitos possível para aquele país — um POST direto que não
+// bater com isso é rejeitado.
+const PHONE_CHARS_RE = /^[\d\s()\-]+$/;
+const COUNTRIES = new Set(getCountries());
+const regionNames = new Intl.DisplayNames(["pt-BR"], { type: "region" });
+
+function phoneOk(phone, country) {
+  if (!COUNTRIES.has(country) || !PHONE_CHARS_RE.test(phone)) return false;
+  const digits = phone.replace(/\D/g, "");
+  return !!digits && validatePhoneNumberLength(digits, country) === undefined;
+}
+
+/** "+55 (31) 99999-9999 (Brasil)" — DDI, número e o país, por extenso */
+function phoneLabel(phone, country) {
+  const name = regionNames.of(country) ?? country;
+  return `+${getCountryCallingCode(country)} ${phone} (${name})`;
+}
 
 function clean(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function validate({ firstName, lastName, phone, email, message }) {
+function validate({ firstName, lastName, phone, country, email, message }) {
   const errors = [];
 
   if (!firstName || firstName.length > LIMITS.firstName) {
@@ -47,7 +67,7 @@ function validate({ firstName, lastName, phone, email, message }) {
   if (!lastName || lastName.length > LIMITS.lastName) {
     errors.push("Sobrenome inválido.");
   }
-  if (!phone || phone.length > LIMITS.phone || !PHONE_RE.test(phone)) {
+  if (!phone || phone.length > LIMITS.phone || !phoneOk(phone, country)) {
     errors.push("Telefone inválido.");
   }
   if (!email || email.length > LIMITS.email || !EMAIL_RE.test(email)) {
@@ -69,11 +89,12 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-function buildEmail({ firstName, lastName, phone, email, message }) {
+function buildEmail({ firstName, lastName, phone, country, email, message }) {
   const fullName = `${firstName} ${lastName}`;
+  const phoneText = phoneLabel(phone, country);
   const safe = {
     fullName: escapeHtml(fullName),
-    phone: escapeHtml(phone),
+    phone: escapeHtml(phoneText),
     email: escapeHtml(email),
     message: escapeHtml(message).replace(/\n/g, "<br />"),
   };
@@ -82,7 +103,7 @@ function buildEmail({ firstName, lastName, phone, email, message }) {
     `Novo contato pelo portfólio.`,
     ``,
     `Nome: ${fullName}`,
-    `Telefone: ${phone}`,
+    `Telefone: ${phoneText}`,
     `Email: ${email}`,
     ``,
     `Mensagem:`,
@@ -129,6 +150,8 @@ export default async function handler(req, res) {
     firstName: clean(body.firstName),
     lastName: clean(body.lastName),
     phone: clean(body.phone),
+    // forms antigos (sem o select de DDI) mandavam só números brasileiros
+    country: clean(body.country).toUpperCase() || "BR",
     email: clean(body.email),
     message: clean(body.message),
   };

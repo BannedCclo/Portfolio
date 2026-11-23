@@ -1,40 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { initFinale } from "../three/acts/finale.js";
 import { useLanguage } from "../lib/i18n/LanguageContext.jsx";
+import {
+  DEFAULT_COUNTRY,
+  countryOptions,
+  formatPhone,
+  phonePlaceholder,
+} from "../lib/phone.js";
 import "./Contact.css";
 
 const EMPTY_FORM = {
   firstName: "",
   lastName: "",
+  country: DEFAULT_COUNTRY, // ISO do DDI escolhido no select
   phone: "",
   email: "",
   message: "",
   website: "", // honeypot — só um bot preenche isto
 };
 
-/*
- * (DD) DDDD-DDDD pra fixo, (DD) DDDDD-DDDD pra celular — o formato só se
- * decide entre os dois quando o 11º dígito é digitado, então reflui de 4
- * pra 5 dígitos na segunda metade nesse momento. Comportamento normal de
- * máscara de telefone BR (mesmo approach usado por qualquer form brasileiro
- * que não sabe de antemão se é fixo ou celular).
- */
-function formatPhoneBR(raw) {
-  const digits = raw.replace(/\D/g, "").slice(0, 11);
-  if (!digits) return "";
-  if (digits.length <= 2) return `(${digits}`;
-
-  const ddd = digits.slice(0, 2);
-  const rest = digits.slice(2);
-  if (rest.length <= 4) return `(${ddd}) ${rest}`;
-
-  const splitAt = digits.length <= 10 ? 4 : 5;
-  return `(${ddd}) ${rest.slice(0, splitAt)}-${rest.slice(splitAt)}`;
-}
-
 export default function Contact() {
   useEffect(() => initFinale(), []);
-  const { s } = useLanguage();
+  const { s, lang } = useLanguage();
   const { contact } = s;
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -47,9 +34,18 @@ export default function Contact() {
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  const countries = useMemo(() => countryOptions(lang), [lang]);
+  const country = countries.find((c) => c.code === form.country) ?? countries[0];
+
+  // a máscara segue o país escolhido (lib/phone.js)
   const handlePhoneChange = (e) => {
-    const formatted = formatPhoneBR(e.target.value);
+    const formatted = formatPhone(e.target.value, form.country);
     setForm((f) => ({ ...f, phone: formatted }));
+  };
+  // trocando o país, o que já foi digitado é reformatado no padrão novo
+  const handleCountryChange = (e) => {
+    const next = e.target.value;
+    setForm((f) => ({ ...f, country: next, phone: formatPhone(f.phone, next) }));
   };
 
   const handleSubmit = async (e) => {
@@ -133,18 +129,41 @@ export default function Contact() {
         <div className="contact__row">
           <div className="contact__field">
             <label htmlFor="phone">{contact.phone}</label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              required
-              maxLength={16}
-              placeholder="(31) 99999-9999"
-              value={form.phone}
-              onChange={handlePhoneChange}
-            />
+            <div className="contact__phone">
+              {/* select nativo (acessível, e no celular abre a lista do
+                  sistema) invisível por cima de um rótulo curto: fechado,
+                  mostra só "BR +55" */}
+              <div className="contact__ddi">
+                <span className="contact__ddi-face" aria-hidden="true">
+                  {country.code} +{country.ddi}
+                </span>
+                <select
+                  name="country"
+                  aria-label={contact.country}
+                  autoComplete="tel-country-code"
+                  value={form.country}
+                  onChange={handleCountryChange}
+                >
+                  {countries.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name} (+{c.ddi})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                required
+                maxLength={25}
+                placeholder={phonePlaceholder(form.country)}
+                value={form.phone}
+                onChange={handlePhoneChange}
+              />
+            </div>
           </div>
           <div className="contact__field">
             <label htmlFor="email">{contact.email}</label>

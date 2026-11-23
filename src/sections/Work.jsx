@@ -85,11 +85,6 @@ export default function Work() {
             </article>
           ))}
         </div>
-
-        <div className="work__rail" aria-hidden="true">
-          <i />
-          <b className="work__thumb" />
-        </div>
       </div>
     </section>
   );

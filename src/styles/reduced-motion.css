@@ -21,10 +21,32 @@
     transition-duration: 0.001ms !important;
   }
 
-  /* the hero's scroll affordances have nothing to drive */
-  .brain-hint,
-  .brain-progress,
-  .spine {
+  /* sem a corrente (lib/binaryFlow.js não roda), a linha já está cheia:
+     os marcos da linha do tempo ficam acesos */
+  .tl::before {
+    background: radial-gradient(circle, #fffaf0 0 35%, var(--gold-hi) 75%);
+    border-color: var(--gold-hi);
+    box-shadow:
+      0 0 6px var(--gold-hi),
+      0 0 16px rgba(236, 200, 120, 0.75);
+  }
+
+  /* Ferramentas: sem a "digitação" — nome e itens já prontos, sem cursor */
+  .stack__group .stack__prompt,
+  .stack__group .stack__cmd,
+  .stack__group li {
+    animation: none !important;
+    visibility: visible !important;
+  }
+  .stack__group .stack__cmd {
+    width: auto !important;
+  }
+  .stack__cursor {
+    display: none !important;
+  }
+
+  /* the hero's scroll affordance has nothing to drive */
+  .brain-hint {
     display: none;
   }
 
@@ -63,22 +85,13 @@
   .work__track::-webkit-scrollbar {
     display: none;
   }
-  /* No scroll-snap here (unlike the narrow-viewport fallback in Work.css):
-     this track is also driven by the rail's drag-to-scrub (see
-     initReducedMotionRail() in lib/sections/work.js), which needs to be able
-     to rest at any arbitrary offset, not just a card boundary. Toggling
-     scroll-snap-type off only while dragging doesn't get that — turning it
-     back on at drag-end forces an immediate correction back to whichever
-     card the browser considers nearest, which regularly isn't the card the
-     drag was released on, and the same snap machinery can also make
-     mid-drag scrollLeft assignments fight the pointer instead of tracking
-     it. Free scrolling here avoids both. */
+  /* a textura de dígitos do hover pisca sozinha (animação do SVG, que as
+     regras acima não alcançam): aqui ela não aparece */
+  .proj__body::before {
+    display: none;
+  }
   .proj {
     transform: none !important;
     opacity: 1 !important;
   }
-  /* The rail and its drag handle still work here — see
-     initReducedMotionRail() in lib/sections/work.js — mirroring and driving
-     the track's native scrollLeft instead of a ScrollTrigger pin. Only the
-     narrow-viewport fallback (Work.css) hides it, same as in normal motion. */
 }

@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { initAbout } from "../lib/sections/about.js";
+import { initBioDecode } from "../lib/bioDecode.js";
 import { useLanguage } from "../lib/i18n/LanguageContext.jsx";
 import DepthPortrait from "../components/depthPortrait/DepthPortrait.jsx";
 import "./About.css";
@@ -146,6 +147,44 @@ function renderWhere(parts) {
   });
 }
 
+/* Bio: cada caractere vira um <span> com um dígito por cima (data-d), para
+   lib/bioDecode.js decodificar o texto de 0s e 1s em letras conforme a
+   rolagem. O span mantém a largura da letra de verdade, então nada pula de
+   lugar quando ela aparece. Leitores de tela recebem o texto inteiro, limpo
+   (.bio__sr); a versão picotada é aria-hidden. */
+function charWords(text, keyBase) {
+  return text.split(/(\s+)/).map((word, wi) => {
+    if (!word) return null;
+    if (/^\s+$/.test(word)) return " ";
+    return (
+      <span className="bio__w" key={`${keyBase}-${wi}`}>
+        {[...word].map((ch, ci) => (
+          <span className="bio__ch" data-d={(wi + ci) % 2} key={ci}>
+            {ch}
+          </span>
+        ))}
+      </span>
+    );
+  });
+}
+
+function BioText({ paragraphs, lang }) {
+  const ref = useRef(null);
+  // refeito a cada troca de idioma: os spans são outros
+  useEffect(() => (ref.current ? initBioDecode(ref.current) : undefined), [lang]);
+
+  return (
+    <div className="about__text" ref={ref}>
+      {paragraphs.map((p, i) => (
+        <p key={`${lang}-${i}`}>
+          <span className="bio__sr">{p}</span>
+          <span aria-hidden="true">{charWords(p, i)}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function About() {
   useEffect(() => initAbout(), []);
   const { lang, s } = useLanguage();
@@ -167,22 +206,24 @@ export default function About() {
           <div className="about__portrait about__portrait--depth">
             <DepthPortrait alt={s.about.portraitAlt} />
           </div>
-          <div className="about__text">
-            {s.about.bio.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          <BioText paragraphs={s.about.bio} lang={lang} />
         </div>
 
-        <ol className="timeline">
-          {TIMELINE.map((t, i) => (
-            <li className="tl" key={i}>
-              <p className="tl__when">{t.when}</p>
-              <h3 className="tl__what">{t.what[lang]}</h3>
-              <p className="tl__where">{renderWhere(t.where[lang])}</p>
-            </li>
-          ))}
-        </ol>
+        {/* O trilho segue o de Metas: um preenchimento com ponta brilhante
+            correndo à frente. Chegando ao fim, a ponta vira a corrente de 0s
+            e 1s que desce até os projetos (lib/binaryFlow.js). */}
+        <div className="timeline-wrap">
+          <span className="timeline__pulse" aria-hidden="true" />
+          <ol className="timeline">
+            {TIMELINE.map((t, i) => (
+              <li className="tl" key={i}>
+                <p className="tl__when">{t.when}</p>
+                <h3 className="tl__what">{t.what[lang]}</h3>
+                <p className="tl__where">{renderWhere(t.where[lang])}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   );

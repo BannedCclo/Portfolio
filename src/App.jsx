@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import Stage from "./components/Stage.jsx";
 import LoadingScreen from "./components/LoadingScreen.jsx";
 import Nav from "./components/Nav.jsx";
-import Spine from "./components/Spine.jsx";
+import ScrollProgress from "./components/ScrollProgress.jsx";
 import Footer from "./components/footer/footer";
 import AnimatedLogo from "./components/animatedLogo/animatedLogo";
 import RandomProjectButton from "./components/RandomProjectButton.jsx";
@@ -14,6 +14,7 @@ import About from "./sections/About.jsx";
 import Contact from "./sections/Contact.jsx";
 import { useLanguage } from "./lib/i18n/LanguageContext.jsx";
 import { ScrollTrigger } from "./lib/gsap.js";
+import { initBinaryFlow } from "./lib/binaryFlow.js";
 
 export default function App() {
   const { lang, s } = useLanguage();
@@ -47,6 +48,11 @@ export default function App() {
     return () => revealer.disconnect();
   }, [lang]);
 
+  /* A corrente de 0s e 1s que liga a linha do tempo (Sobre) aos cards de
+     projeto (Trabalho) — precisa das duas seções montadas, por isso vive
+     aqui e não no efeito de uma delas. */
+  useEffect(() => initBinaryFlow(), []);
+
   /* Swapping languages changes text length everywhere at once, which can
      shift layout (card heights, the timeline's rail length, the work
      gallery's track width) out from under every ScrollTrigger's cached
@@ -64,7 +70,7 @@ export default function App() {
       <LoadingScreen />
       <Stage />
       <Nav />
-      <Spine />
+      <ScrollProgress />
       <Hero />
       <About />
       <Work />

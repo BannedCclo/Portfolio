@@ -1,11 +1,10 @@
 /* ===========================================================
    sections/about.js
-   Timeline entries reveal as they arrive; the rail's fill chases the scroll
-   through damp(), the same signal-travelling-a-line idea as the manifesto.
+   Timeline entries reveal as they arrive. The rail's fill (and its bright
+   tip) is driven from lib/binaryFlow.js, which carries the same signal on
+   past the end of the line into the projects section.
    =========================================================== */
 
-import { clamp01, damp, isNear } from "../motion.js";
-import { onTick } from "../ticker.js";
 
 const reduceMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
@@ -39,18 +38,8 @@ export function initAbout() {
     return () => io.disconnect();
   }
 
-  let fill = 0;
-  const unsubscribeTick = onTick((dt) => {
-    if (!isNear(section, 0.4)) return;
-    const rect = timeline.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const target = clamp01((vh * 0.6 - rect.top) / rect.height);
-    fill = damp(fill, target, dt, 1.8);
-    timeline.style.setProperty("--fill", fill.toFixed(4));
-  });
-
-  return () => {
-    io.disconnect();
-    unsubscribeTick();
-  };
+  /* O preenchimento do trilho e a ponta brilhante são movidos por
+     lib/binaryFlow.js: é um sinal só, que corre pela linha e, ao chegar ao
+     fim, continua como a corrente de 0s e 1s até os projetos. */
+  return () => io.disconnect();
 }

@@ -19,13 +19,12 @@ const STACK_GROUPS = [
   { groupKey: "other", items: ["GitHub", "Figma", "Claude Code", "Vercel"] },
 ];
 
-// continuous index across all columns, computed once at module load, so the
-// reveal sweeps the whole grid rather than firing four columns in lockstep
-let _i = 0;
-const STACK_GROUPS_INDEXED = STACK_GROUPS.map((g) => ({
-  groupKey: g.groupKey,
-  items: g.items.map((item) => ({ item, i: _i++ })),
-}));
+// Entrada estilo terminal (Stack.css + lib/sections/stack.js): cada coluna
+// "digita" o nome da categoria depois de um `$`, e os itens saem uma linha
+// por vez, secos, como a saída de um comando. O JSX só informa o tamanho do
+// nome (--n, para o passo da digitação) e a linha de cada item (--j); quando
+// cada coluna começa (--t0) quem decide é o stack.js, na hora em que ela
+// aparece na tela.
 
 export default function Stack() {
   useEffect(() => initStack(), []);
@@ -43,18 +42,31 @@ export default function Stack() {
       </div>
 
       <div className="stack__grid">
-        {STACK_GROUPS_INDEXED.map((g) => (
-          <div className="stack__group" key={g.groupKey}>
-            <h3>{s.stack.groups[g.groupKey]}</h3>
-            <ul>
-              {g.items.map(({ item, i }) => (
-                <li key={item} style={{ "--i": i, cursor: "default" }}>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {STACK_GROUPS.map((g) => {
+          const name = s.stack.groups[g.groupKey];
+          return (
+            <div
+              className="stack__group"
+              key={g.groupKey}
+              style={{ "--n": name.length, "--rows": g.items.length }}
+            >
+              <h3>
+                <span className="stack__prompt" aria-hidden="true">
+                  ${" "}
+                </span>
+                <span className="stack__cmd">{name}</span>
+                <span className="stack__cursor" aria-hidden="true" />
+              </h3>
+              <ul>
+                {g.items.map((item, j) => (
+                  <li key={item} style={{ "--j": j, cursor: "default" }}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

@@ -2,8 +2,10 @@
    stack — tools, by category
 
    Deliberate restraint right after the gallery's weight: no 3D, no pin, just
-   a well-set list. The only motion is a staggered reveal and a rule that
-   lights on hover.
+   a well-set list. The only motion is a terminal-style entrance (each column
+   types its name and prints its items line by line), a rule that lights on
+   hover and, on hover, the tool's logo formed out of 0s and 1s
+   (lib/stackLogos.js).
    =========================================================== */
 
 .stack__grid {
@@ -48,9 +50,8 @@
   border-bottom: 1px solid var(--hairline);
   transition: color var(--dur-fast) var(--ease-out-expo);
 
-  /* staggered entrance, one property per axis: rise + fade together */
+  /* escondido até a coluna "rodar o comando" (ver .is-revealed abaixo) */
   opacity: 0;
-  transform: translateY(10px);
 }
 .stack__group li::before {
   content: "";
@@ -73,16 +74,117 @@
   background: var(--gold-metal);
 }
 
-.stack.is-revealed .stack__group li {
+/* ---- entrada estilo terminal ------------------------------------------
+   Cada coluna: aparece o `$`, o nome da categoria é digitado caractere a
+   caractere com um cursor em bloco, e os itens saem uma linha por vez, sem
+   easing nenhum — a graça é parecer a saída seca de um comando.
+   Tempos: --t0 (quando a coluna começa) vem do stack.js por coluna;
+   --pause/--type/--line também vêm de lá; --n (tamanho do nome) e --j
+   (linha do item) vêm do JSX. Nada de transição: tudo é "aparece num
+   instante X", feito com animações de duração 0 e fill `backwards`, que
+   seguram o estado escondido só durante o atraso. */
+
+.stack__prompt {
+  color: var(--ink-mute);
+}
+
+.stack__cmd {
+  display: inline-block;
+  vertical-align: bottom;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.stack__cursor {
+  display: inline-block;
+  width: 0.62em;
+  height: 1.05em;
+  margin-left: 0.1em;
+  vertical-align: -0.18em;
+  background: var(--gold);
+  visibility: hidden;
+}
+
+/* antes de rodar: só a régua do título está lá */
+.stack__group:not(.is-revealed) .stack__prompt {
+  visibility: hidden;
+}
+.stack__group:not(.is-revealed) .stack__cmd {
+  width: 0;
+}
+
+.stack__group.is-revealed {
+  /* fim da "digitação" do nome, e da saída inteira */
+  --typed: calc(var(--t0, 0ms) + var(--pause) + var(--n) * var(--type));
+  --done: calc(var(--typed) + var(--pause) + var(--rows) * var(--line) + 500ms);
+}
+
+.stack__group.is-revealed .stack__prompt {
+  animation: stack-hidden 0s var(--t0, 0ms) backwards;
+}
+
+/* mono: cada caractere avança exatamente 1ch + o letter-spacing do rótulo,
+   então a largura em degraus revela um caractere por vez. Depois que a
+   animação acaba, volta a ser `auto` (mesma largura) — trocar de idioma
+   depois não deixa nada cortado. */
+.stack__group.is-revealed .stack__cmd {
+  animation: stack-type calc(var(--n) * var(--type)) steps(var(--n), end)
+    calc(var(--t0, 0ms) + var(--pause)) backwards;
+}
+
+.stack__group.is-revealed .stack__cursor {
+  animation:
+    stack-shown 0s var(--t0, 0ms) forwards,
+    stack-blink 0.9s steps(1, end) var(--typed) infinite,
+    stack-hidden-for-good 0s var(--done) forwards;
+}
+
+.stack__group.is-revealed li {
   opacity: 1;
-  transform: translateY(0);
-  /* the stagger delay belongs only to the entrance (opacity/transform) — a
-     single transition-delay would otherwise apply to every property in the
-     list, including color, so hovering an item further down the continuous
-     --i index (i.e. in a column further right) picked up that same delay
-     and felt like a slower hover transition than the leftmost column. */
-  transition:
-    opacity 0.7s var(--ease-out-expo) calc(var(--i, 0) * 45ms),
-    transform 0.7s var(--ease-out-expo) calc(var(--i, 0) * 45ms),
-    color var(--dur-fast) var(--ease-out-expo);
+  animation: stack-hidden 0s
+    calc(var(--typed) + var(--pause) + var(--j, 0) * var(--line)) backwards;
+}
+
+@keyframes stack-type {
+  from {
+    width: 0;
+  }
+  to {
+    width: calc(var(--n) * (1ch + var(--track-label)));
+  }
+}
+@keyframes stack-hidden {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes stack-shown {
+  from,
+  to {
+    visibility: visible;
+  }
+}
+/* listada depois de stack-shown, então ganha dela quando entra */
+@keyframes stack-hidden-for-good {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes stack-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* os logos em dígitos (lib/stackLogos.js): um canvas da tela inteira, por
+   cima do conteúdo e sem capturar o ponteiro */
+.stack-logos {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-beam);
+  pointer-events: none;
 }

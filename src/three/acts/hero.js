@@ -536,14 +536,13 @@ let section,
   stageEl,
   titleScreenEl,
   hintEl,
-  progressEl,
   exitFadeEl,
   vignetteEl,
   fadeBottomEl,
   pageEls;
 
 function onProgress(p) {
-  // Only records the value now — this used to also write hint/progress-bar/
+  // Only records the value now — this used to also write hint/
   // page-visibility/blur/title-opacity straight to the DOM from inside
   // GSAP's own scroll callback, on top of the RAF loop's own per-frame
   // writes below reading the same `progress`. Two write sources interleaved
@@ -726,7 +725,6 @@ function update(t, dt) {
   const ease = smoothstep(approachRaw);
 
   hintEl.style.opacity = progress < 0.04 ? 1 : 0;
-  progressEl.style.setProperty("--p", progress);
   pageEls.forEach((el, i) => {
     const [start, end] = PHASE.pages[i];
     el.classList.toggle("is-visible", progress >= start && progress <= end);
@@ -1003,7 +1001,6 @@ export function initHero() {
   stageEl = document.getElementById("stage");
   titleScreenEl = document.getElementById("brainTitleScreen");
   hintEl = document.getElementById("brainHint");
-  progressEl = document.getElementById("brainProgress");
   exitFadeEl = document.getElementById("brainExitFade");
   vignetteEl = document.getElementById("brainVignette");
   fadeBottomEl = document.getElementById("brainFadeBottom");
@@ -1107,12 +1104,6 @@ export function initHero() {
       scrub: 0.6,
       pin: true,
       onUpdate: (self) => onProgress(self.progress),
-      // the hero has its own progress rail (.brain-progress) at the exact
-      // same screen position as the page-wide reading spine — both visible
-      // at once reads as two conflicting scrollbars, so the spine steps
-      // aside while the hero owns that spot
-      onToggle: (self) =>
-        document.body.classList.toggle("is-hero", self.isActive),
     });
     pinTrigger = trigger;
   } else {
@@ -1131,7 +1122,6 @@ export function initHero() {
     if (!reduceMotion) section.removeEventListener("click", onClick);
     trigger?.kill();
     pinTrigger = null;
-    document.body.classList.remove("is-hero");
     unregisterAct(act);
     act = null;
   };

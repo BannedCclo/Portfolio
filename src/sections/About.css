@@ -126,7 +126,12 @@
     rgb(7 7 7 / 0) 100%
   );
 }
+/* o texto fica centrado sob o retrato (que é centrado na coluna): bloco
+   mais estreito, no meio da coluna, com as linhas centralizadas */
 .about__text p {
+  margin-inline: auto;
+  text-align: center;
+  text-wrap: pretty;
   text-shadow:
     0 0 1px var(--bg),
     0 0 10px var(--bg),
@@ -137,7 +142,7 @@
   color: var(--ink-dim);
   line-height: 1.8;
   font-size: var(--fs-4);
-  max-width: 46ch;
+  max-width: 42ch;
 }
 .about__bio p + p {
   margin-top: var(--sp-4);
@@ -145,6 +150,56 @@
 .about__bio strong {
   color: var(--ink);
   font-weight: 500;
+}
+
+/* ---------- bio decodificada (lib/bioDecode.js) ----------
+   Cada caractere é um span com a largura da letra real; enquanto não foi
+   decodificado, a letra fica transparente e um dígito (data-d) aparece
+   centrado no lugar dela — dourado apagado, ou aceso na frente de
+   decodificação. Ao virar letra, ela surge dourada e esfria para a cor do
+   texto. É um detalhe: termina bem antes de o texto chegar ao meio da tela. */
+.bio__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.bio__w {
+  white-space: nowrap;
+}
+.bio__ch {
+  position: relative;
+}
+.bio__ch.is-on {
+  animation: bio-cool 0.6s var(--ease-out-expo);
+}
+@keyframes bio-cool {
+  from {
+    color: var(--gold);
+  }
+}
+.about__text .bio__ch:not(.is-on) {
+  color: transparent;
+  text-shadow: none;
+}
+.bio__ch:not(.is-on)::before {
+  content: attr(data-d);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  line-height: 1;
+  color: var(--gold-lo);
+  opacity: 0.22;
+}
+.bio__ch.is-hot::before {
+  color: var(--gold);
+  opacity: 0.75;
+  text-shadow: 0 0 6px rgba(236, 200, 120, 0.5);
 }
 
 /* ---------- timeline ---------- */
@@ -162,24 +217,76 @@
   width: 1px;
   background: var(--hairline);
 }
-/* the travelling fill, driven from js/sections/about.js */
+/* the travelling fill, driven from lib/binaryFlow.js (--fill vem do
+   .timeline-wrap) — mesmo degradê do trilho de Metas: nasce transparente e
+   esquenta até o dourado na ponta.
+   No fim, enquanto a corrente de 0s e 1s sai (--unzip, 0..1), o trecho final
+   do fio se desfaz num degradê: é ali que binaryFlow.js desenha os dígitos
+   bem juntos, que vão se soltando para baixo — a linha "se descompacta". */
 .timeline::after {
   content: "";
   position: absolute;
   left: 3px;
-  top: 0.6em;
+  /* --drain (0..1): enquanto os dígitos saem pela ponta, o fio se esvazia
+     de cima para baixo — o que sai embaixo é o que falta em cima */
+  top: calc(0.6em + var(--drain, 0) * (100% - 1.2em));
   width: 1px;
-  height: calc(var(--fill, 0) * (100% - 1.2em));
-  background: linear-gradient(to bottom, var(--gold-lo), var(--gold), var(--gold-hi));
+  height: calc((var(--fill, 0) - var(--drain, 0)) * (100% - 1.2em));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--gold-lo) 30%,
+    var(--gold)
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - var(--unzip, 0) * 70px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - var(--unzip, 0) * 70px),
+    transparent
+  );
+}
+
+/* a ponta brilhante que corre à frente do preenchimento (como
+   .manifesto__pulse). Ao chegar ao fim ela se apaga conforme o fio se
+   descompacta (--unzip): o brilho passa para os dígitos. */
+.timeline-wrap {
+  position: relative;
+}
+.timeline__pulse {
+  position: absolute;
+  z-index: 1;
+  left: 3.5px;
+  top: calc(0.6em + var(--fill, 0) * (100% - 1.2em));
+  width: 3px;
+  height: 46px;
+  transform: translate(-50%, -80%);
+  border-radius: 2px;
+  background: linear-gradient(to bottom, transparent, var(--gold-hi), transparent);
+  box-shadow:
+    0 0 12px var(--gold-hi),
+    0 0 30px rgba(236, 200, 120, 0.4);
+  opacity: var(--pulse-alpha, 0);
+  transition: opacity 0.6s var(--ease-out-expo);
+  pointer-events: none;
 }
 
 .tl {
   position: relative;
+  /* acima do trilho (.timeline::before/::after vêm depois no DOM e
+     pintariam por cima): o fio passa por trás do ponto, sem aparecer */
+  z-index: 1;
   padding-bottom: var(--sp-7);
 }
 .tl:last-child {
   padding-bottom: 0;
 }
+/* o marco: um ponto opaco (fundo da página) que esconde o fio por trás e
+   acende quando o preenchimento chega a ele (lib/binaryFlow.js põe
+   .is-lit) — miolo claro, aro dourado e um halo, como a ponta da linha */
 .tl::before {
   content: "";
   position: absolute;
@@ -191,14 +298,19 @@
   background: var(--bg);
   border: 1px solid var(--hairline-strong);
   transition:
-    background 0.6s var(--ease-out-expo),
-    border-color 0.6s var(--ease-out-expo),
-    box-shadow 0.6s var(--ease-out-expo);
+    background 0.5s var(--ease-out-expo),
+    border-color 0.5s var(--ease-out-expo),
+    box-shadow 0.5s var(--ease-out-expo),
+    transform 0.5s var(--ease-out-expo);
 }
-.tl.is-revealed::before {
-  background: var(--gold);
-  border-color: var(--gold);
-  box-shadow: 0 0 14px rgba(201, 173, 114, 0.7);
+.tl.is-lit::before {
+  background: radial-gradient(circle, #fffaf0 0 35%, var(--gold-hi) 75%);
+  border-color: var(--gold-hi);
+  transform: scale(1.25);
+  box-shadow:
+    0 0 6px var(--gold-hi),
+    0 0 16px rgba(236, 200, 120, 0.75),
+    0 0 32px rgba(236, 200, 120, 0.35);
 }
 
 .tl__when {

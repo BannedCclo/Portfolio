@@ -121,6 +121,67 @@
      indicator, and a second boxed outline on top of it read as clutter. */
   outline: none;
 }
+/* telefone: DDI pequeno à esquerda + o número. O select nativo fica
+   invisível por cima de um rótulo curto ("BR +55"), então fechado ele ocupa
+   pouco; aberto, é a lista do sistema (com busca por digitação), nomes por
+   extenso. Mesma linha de base dos outros campos. */
+.contact__phone {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-3);
+}
+.contact__phone input {
+  flex: 1;
+  min-width: 0;
+}
+.contact__ddi {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  border-bottom: 1px solid var(--hairline-strong);
+  padding: var(--sp-2) 0.1em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  transition:
+    border-color var(--dur-fast) var(--ease-out-expo),
+    color var(--dur-fast) var(--ease-out-expo);
+}
+/* setinha */
+.contact__ddi::after {
+  content: "";
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-25%) rotate(45deg);
+  opacity: 0.7;
+}
+.contact__ddi:hover {
+  color: var(--ink);
+}
+.contact__ddi:focus-within {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.contact__ddi select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+  /* a lista aberta no tema escuro do site */
+  color-scheme: dark;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-3);
+}
+
 .contact__field input::placeholder,
 .contact__field textarea::placeholder {
   color: var(--ink-mute);
