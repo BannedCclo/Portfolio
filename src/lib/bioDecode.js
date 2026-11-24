@@ -88,3 +88,51 @@ export function initBioDecode(root) {
     chars.forEach((c) => c.classList.remove("is-on", "is-hot"));
   };
 }
+
+// decodificação de um item da linha do tempo (disparada ao aparecer, não pela
+// rolagem): a frente corre pelos caracteres numa velocidade fixa
+const ITEM_RATE = 90; // caracteres por segundo
+const ITEM_FRONT = 10;
+
+/** Decodifica os .bio__ch de `root` de uma vez, ao ser chamada. Devolve o
+ *  cancelar (que deixa tudo já decodificado). */
+export function decodeOnce(root) {
+  const chars = [...root.querySelectorAll(".bio__ch")];
+  const done = () => chars.forEach((c) => {
+    c.classList.remove("is-hot");
+    c.classList.add("is-on");
+  });
+  if (!chars.length) return () => {};
+  if (reduceMotion) {
+    done();
+    return () => {};
+  }
+  chars.forEach((c) => (c.dataset.d = Math.random() < 0.5 ? "0" : "1"));
+  const n = chars.length;
+  let pos = 0;
+  let flipAcc = 0;
+  let unsubscribe = () => {};
+  unsubscribe = onTick((dt) => {
+    pos += dt * ITEM_RATE;
+    flipAcc += dt * 1000;
+    const flip = flipAcc >= FLIP_MS;
+    if (flip) flipAcc = 0;
+    for (let i = 0; i < n; i++) {
+      const c = chars[i];
+      if (i < pos - ITEM_FRONT) {
+        if (!c.classList.contains("is-on")) {
+          c.classList.remove("is-hot");
+          c.classList.add("is-on");
+        }
+      } else if (i < pos) {
+        c.classList.add("is-hot");
+        if (flip && Math.random() < 0.6) c.dataset.d = Math.random() < 0.5 ? "0" : "1";
+      }
+    }
+    if (pos >= n + ITEM_FRONT) unsubscribe();
+  });
+  return () => {
+    unsubscribe();
+    done();
+  };
+}

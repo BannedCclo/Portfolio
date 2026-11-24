@@ -70,6 +70,7 @@ export function splitWords(el) {
     }
     w.style.setProperty("--line", line);
   }
+  setCols(words);
 
   el.dataset.split = "true";
   el.dataset.lines = String(line + 1);
@@ -77,6 +78,18 @@ export function splitWords(el) {
 }
 
 /** Re-runs line grouping after a resize, where words may have reflowed. */
+/** --col: posição da palavra dentro da própria linha (0, 1, 2…) */
+function setCols(words) {
+  let line = null;
+  let col = 0;
+  for (const w of words) {
+    const l = w.style.getPropertyValue("--line");
+    col = l === line ? col + 1 : 0;
+    line = l;
+    w.style.setProperty("--col", col);
+  }
+}
+
 export function relineWords(el) {
   const words = el.querySelectorAll(":scope .w");
   let line = -1;
@@ -89,5 +102,6 @@ export function relineWords(el) {
     }
     w.style.setProperty("--line", line);
   }
+  setCols(words);
   el.dataset.lines = String(line + 1);
 }

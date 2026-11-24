@@ -180,7 +180,8 @@
     color: var(--gold);
   }
 }
-.about__text .bio__ch:not(.is-on) {
+.about__text .bio__ch:not(.is-on),
+.tl .bio__ch:not(.is-on) {
   color: transparent;
   text-shadow: none;
 }

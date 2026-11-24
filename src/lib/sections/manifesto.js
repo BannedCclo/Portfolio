@@ -66,7 +66,9 @@ export function initManifesto() {
     (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
-        entry.target.classList.add("is-revealed");
+        // o texto é escrito assim que o item entra na tela, sem esperar o
+        // ponto do trilho acender (que persegue a rolagem com atraso)
+        entry.target.classList.add("is-revealed", "is-written");
         revealer.unobserve(entry.target);
       }
     },
@@ -77,7 +79,7 @@ export function initManifesto() {
   if (reduceMotion) {
     tenets.forEach((el) => el.classList.add("is-revealed"));
     rail?.style.setProperty("--fill", 1);
-    tenets.forEach((el) => el.classList.add("is-lit"));
+    tenets.forEach((el) => el.classList.add("is-lit", "is-written"));
     return () => {
       clearTimeout(resizeTimer);
       removeEventListener("resize", onResize);

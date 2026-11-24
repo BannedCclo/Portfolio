@@ -185,3 +185,87 @@
   font-style: normal;
   color: var(--gold);
 }
+
+/* ---------- revelação com reflexo de luz ----------
+   Quando o item entra na tela (.is-written, manifesto.js), as palavras surgem
+   em foco, linha por linha, e um reflexo branco — como luz passando num metal polido
+   — cruza cada uma, no ritmo da leitura. O reflexo é um degradê recortado no
+   texto (background-clip: text), então só "acende" as próprias letras; no
+   fim a palavra volta ao estilo normal (animação só "backwards"). O mesmo
+   reflexo cruza a palavra de novo no hover. --line e --col (split.js) dão a linha e a posição
+   na linha: a frase entra linha por linha, com um leve atraso entre as
+   palavras da mesma linha só para o reflexo correr da esquerda p/ direita. */
+.tenet__text .w {
+  overflow: visible;
+}
+.tenet__text .w__in {
+  transform: none;
+  opacity: 0;
+  background-image: linear-gradient(
+    100deg,
+    currentColor 0 42%,
+    #ffffff 50%,
+    currentColor 58% 100%
+  );
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.tenet.is-written .tenet__text .w__in {
+  opacity: 1;
+  animation: reveal-word 1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--line, 0) * 150ms + var(--col, 0) * 22ms + 60ms);
+}
+@keyframes reveal-word {
+  0% {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.28em);
+    background-position: 100% 0;
+    -webkit-text-fill-color: transparent;
+  }
+  35% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+    background-position: 100% 0;
+    -webkit-text-fill-color: transparent;
+  }
+  90% {
+    background-position: 0% 0;
+    -webkit-text-fill-color: transparent;
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+    background-position: 0% 0;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+@keyframes sheen-word {
+  0% {
+    background-position: 100% 0;
+    -webkit-text-fill-color: transparent;
+  }
+  99% {
+    background-position: 0% 0;
+    -webkit-text-fill-color: transparent;
+  }
+  100% {
+    background-position: 0% 0;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+/* O hover ACRESCENTA o reflexo à lista de animações em vez de trocar a de
+   entrada: trocar fazia a entrada recomeçar ao tirar o mouse (a palavra
+   sumia e era escrita de novo). Com "reveal-word" mantida na lista, o
+   navegador a trata como a mesma animação, já terminada. */
+.tenet.is-written .tenet__text .w__in:hover {
+  animation:
+    reveal-word 1s cubic-bezier(0.22, 1, 0.36, 1) backwards,
+    sheen-word 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  animation-delay: calc(var(--line, 0) * 150ms + var(--col, 0) * 22ms + 60ms), 0s;
+}

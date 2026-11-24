@@ -122,31 +122,6 @@ const TIMELINE = [
   },
 ];
 
-// Marcos com trecho institucional destacam a instituição em `<mark>` — link
-// quando há URL confirmada, span quando ainda não há. Partes simples (string)
-// passam direto.
-function renderWhere(parts) {
-  return parts.map((part, i) => {
-    if (typeof part === "string") return <span key={i}>{part}</span>;
-    const href = INSTITUTION_LINKS[part.id];
-    return href ? (
-      <a
-        key={i}
-        className="tl__institution"
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {part.text}
-      </a>
-    ) : (
-      <span key={i} className="tl__institution">
-        {part.text}
-      </span>
-    );
-  });
-}
-
 /* Bio: cada caractere vira um <span> com um dígito por cima (data-d), para
    lib/bioDecode.js decodificar o texto de 0s e 1s em letras conforme a
    rolagem. O span mantém a largura da letra de verdade, então nada pula de
@@ -168,6 +143,41 @@ function charWords(text, keyBase) {
   });
 }
 
+/** Texto do item da linha do tempo, em dígitos decodificáveis; leitores de
+ *  tela recebem o texto limpo. */
+function DecodeText({ parts, base }) {
+  const list = typeof parts === "string" ? [parts] : parts;
+  const plain = list.map((p) => (typeof p === "string" ? p : p.text)).join("");
+  return (
+    <>
+      <span className="bio__sr">{plain}</span>
+      <span aria-hidden="true">
+        {list.map((part, i) => {
+          if (typeof part === "string") return charWords(part, `${base}-${i}`);
+          const inner = charWords(part.text, `${base}-${i}`);
+          const href = INSTITUTION_LINKS[part.id];
+          // sem URL confirmada ainda: <span> destacado em vez de link
+          return href ? (
+            <a
+              key={i}
+              className="tl__institution"
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {inner}
+            </a>
+          ) : (
+            <span key={i} className="tl__institution">
+              {inner}
+            </span>
+          );
+        })}
+      </span>
+    </>
+  );
+}
+
 function BioText({ paragraphs, lang }) {
   const ref = useRef(null);
   // refeito a cada troca de idioma: os spans são outros
@@ -186,8 +196,8 @@ function BioText({ paragraphs, lang }) {
 }
 
 export default function About() {
-  useEffect(() => initAbout(), []);
   const { lang, s } = useLanguage();
+  useEffect(() => initAbout(), [lang]);
 
   return (
     <section id="sobre" className="block layer">
@@ -218,8 +228,12 @@ export default function About() {
             {TIMELINE.map((t, i) => (
               <li className="tl" key={i}>
                 <p className="tl__when">{t.when}</p>
-                <h3 className="tl__what">{t.what[lang]}</h3>
-                <p className="tl__where">{renderWhere(t.where[lang])}</p>
+                <h3 className="tl__what">
+                  <DecodeText parts={t.what[lang]} base={`w${i}`} />
+                </h3>
+                <p className="tl__where">
+                  <DecodeText parts={t.where[lang]} base={`p${i}`} />
+                </p>
               </li>
             ))}
           </ol>

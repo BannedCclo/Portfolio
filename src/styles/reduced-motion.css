@@ -62,6 +62,23 @@
     transform: none !important;
   }
 
+  /* Contato: o envelope já está aberto, com a folha para fora */
+  .mail,
+  .mail__flap,
+  .mail__seal,
+  .mail__letter {
+    animation: none !important;
+  }
+  .mail__burst,
+  .mail__assemble {
+    display: none;
+  }
+
+  /* Metas: sem a revelação luminosa — o texto já está todo lá */
+  .tenet__text .w__in {
+    animation: none !important;
+  }
+
   /* The gallery's horizontal travel is driven by a scroll-jacked pin that
      never gets created here — same reasoning the narrow breakpoint's own
      fallback already uses (Work.css), reused verbatim rather than the
