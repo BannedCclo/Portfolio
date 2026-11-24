@@ -11,6 +11,10 @@ dist/
 # previas do pipeline do retrato (tools/bake-portrait-depth.py --debug)
 assets-source/_debug/
 
+# backups automáticos do Blender e o normal map do envelope (já vai embutido no envelope.blend)
+*.blend1
+assets-source/envelope-relevo-normal.png
+
 # local
 .claude/
 __pycache__/

@@ -103,7 +103,12 @@ tools/
   bake-brain.mjs               brain.stl → public/assets/brain.glb + brain-low.glb (rodar só se a malha mudar)
 assets-source/
   brain.stl                    fonte do baker, 4,1 MB — não vai para o build
+  envelope.blend               fonte do envelope (modelado do zero, sem selo), com o normal map
+                               do relevo embutido e os nós procedurais desligados para reassar
 public/assets/
+  envelope.glb                 envelope exportado (750 KB): aba superior abre pela dobra, animação
+                               "Envelope_Abrir" (0° → −170° no eixo X); relevo em normal map WebP
+                               (EXT_texture_webp)
   brain.glb                    malha completa (1,2 MB)
   brain-low.glb                malha reduzida (270 KB), escolhida pelo tier de qualidade
                                (tipo de ponteiro) — ver three/stage.js e acts/hero.js
