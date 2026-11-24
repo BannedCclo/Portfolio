@@ -127,6 +127,10 @@ img {
   z-index: var(--z-beam);
   pointer-events: none;
 }
+/* apagado (beamOverlay.js): fora da composição */
+.beam-overlay.is-empty {
+  visibility: hidden;
+}
 
 /* every content section floats above the stage */
 .layer {
@@ -327,4 +331,14 @@ section.block {
   height: 100%;
   z-index: var(--z-beam);
   pointer-events: none;
+}
+/* Com a altura da tela de barra recolhida (constante), e não 100%: no
+   celular a barra de endereço sumir/voltar mudava a altura do canvas no
+   meio da rolagem e o buffer era realocado. Ancorado no topo, o que passa
+   da borda de baixo fica fora da tela. */
+@supports (height: 100lvh) {
+  .binary-flow {
+    bottom: auto;
+    height: 100lvh;
+  }
 }

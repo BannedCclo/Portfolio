@@ -492,14 +492,16 @@ function frame() {
 
   let anyWants = false;
   let anyDynamic = false;
+  // Fase de leitura: todas as medições de layout do quadro (o rect de cada
+  // ato e o que o ato pedir em measure()) acontecem antes de qualquer
+  // update(). Intercalar leitura de um ato com a escrita (opacity, filter,
+  // variáveis CSS) do anterior forçava um layout síncrono por ato, por quadro.
   for (const act of acts) {
-    // One layout read per act per frame, shared by the near/active check and
-    // whatever the act's own update() needs — previously each of those did
-    // its own getBoundingClientRect(), interleaved with this same loop's DOM
-    // writes (opacity, filter) from frame to frame, forcing synchronous
-    // layout every tick.
-    const rect = act.el.getBoundingClientRect();
-    act.rect = rect;
+    act.rect = act.el.getBoundingClientRect();
+    if (isNearRect(act.rect, act.nearMargin)) act.measure?.();
+  }
+  for (const act of acts) {
+    const rect = act.rect;
     const near = isNearRect(rect, act.nearMargin);
     if (near !== act.active) {
       act.active = near;

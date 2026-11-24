@@ -311,6 +311,9 @@ export function initStackLogos(section, { hover = true } = {}) {
     handlers.push(() => document.removeEventListener("click", onTap));
   }
 
+  // vazio, o canvas de tela cheia sai da composição (no celular cada camada
+  // transparente do tamanho da tela ainda custa a mistura a cada quadro)
+  canvas.style.visibility = "hidden";
   let drawn = false;
   let time = 0;
   const unsubscribe = onTick((dt) => {
@@ -319,10 +322,12 @@ export function initStackLogos(section, { hover = true } = {}) {
     if (!active.length) {
       if (drawn) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.visibility = "hidden";
         drawn = false;
       }
       return;
     }
+    if (!drawn) canvas.style.visibility = "";
     fit();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);

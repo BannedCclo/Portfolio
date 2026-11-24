@@ -223,6 +223,11 @@ export default function About() {
             correndo à frente. Chegando ao fim, a ponta vira a corrente de 0s
             e 1s que desce até os projetos (lib/binaryFlow.js). */}
         <div className="timeline-wrap">
+          {/* o preenchimento e a ponta são elementos-folha de propósito:
+              binaryFlow.js grava --fill/--drain/--unzip neles a cada quadro,
+              e uma variável CSS gravada no .timeline-wrap (herdada) fazia o
+              navegador recalcular o estilo de cada caractere da timeline */}
+          <span className="timeline__fill" aria-hidden="true" />
           <span className="timeline__pulse" aria-hidden="true" />
           <ol className="timeline">
             {TIMELINE.map((t, i) => (

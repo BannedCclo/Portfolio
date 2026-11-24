@@ -218,21 +218,35 @@
   width: 1px;
   background: var(--hairline);
 }
-/* the travelling fill, driven from lib/binaryFlow.js (--fill vem do
-   .timeline-wrap) — mesmo degradê do trilho de Metas: nasce transparente e
-   esquenta até o dourado na ponta.
+/* the travelling fill, driven from lib/binaryFlow.js (--fill/--drain/--unzip
+   gravados no próprio .timeline__fill, um elemento-folha: gravados num
+   ancestral, a herança invalidava o estilo da timeline inteira a cada
+   quadro) — mesmo degradê do trilho de Metas: nasce transparente e
+   esquenta até o dourado na ponta. Mede contra o .timeline-wrap, que tem a
+   mesma altura do .timeline (como o .timeline__pulse).
    No fim, enquanto a corrente de 0s e 1s sai (--unzip, 0..1), o trecho final
    do fio se desfaz num degradê: é ali que binaryFlow.js desenha os dígitos
-   bem juntos, que vão se soltando para baixo — a linha "se descompacta". */
-.timeline::after {
-  content: "";
+   bem juntos, que vão se soltando para baixo — a linha "se descompacta".
+
+   Só transform muda por quadro: a caixa tem o tamanho fixo do trilho inteiro
+   (--rail, px, gravado por binaryFlow.js só quando a timeline muda de
+   tamanho) e é deslocada (--drain) e encolhida (--span = fill − drain) a
+   partir do topo. Mudar top/height de um filho absoluto refazia o layout do
+   .timeline-wrap inteiro (~800 spans de caractere) a cada quadro. O degradê
+   escala junto com a caixa, como antes acompanhava a altura; o trecho de
+   70px do --unzip é dividido por --span-safe (o --span com piso > 0) para
+   continuar medindo 70px na tela. */
+.timeline__fill {
   position: absolute;
+  pointer-events: none;
   left: 3px;
+  top: 0.6em;
+  width: 1px;
+  height: var(--rail, 0px);
+  transform-origin: 0 0;
   /* --drain (0..1): enquanto os dígitos saem pela ponta, o fio se esvazia
      de cima para baixo — o que sai embaixo é o que falta em cima */
-  top: calc(0.6em + var(--drain, 0) * (100% - 1.2em));
-  width: 1px;
-  height: calc((var(--fill, 0) - var(--drain, 0)) * (100% - 1.2em));
+  transform: translateY(calc(var(--drain, 0) * var(--rail, 0px))) scaleY(var(--span, 0));
   background: linear-gradient(
     to bottom,
     transparent,
@@ -241,12 +255,12 @@
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
-    #000 calc(100% - var(--unzip, 0) * 70px),
+    #000 calc(100% - var(--unzip, 0) * 70px / var(--span-safe, 1)),
     transparent
   );
   mask-image: linear-gradient(
     to bottom,
-    #000 calc(100% - var(--unzip, 0) * 70px),
+    #000 calc(100% - var(--unzip, 0) * 70px / var(--span-safe, 1)),
     transparent
   );
 }
@@ -261,10 +275,11 @@
   position: absolute;
   z-index: 1;
   left: 3.5px;
-  top: calc(0.6em + var(--fill, 0) * (100% - 1.2em));
+  top: 0.6em;
   width: 3px;
   height: 46px;
-  transform: translate(-50%, -80%);
+  /* corre com transform, não com top (ver .timeline__fill acima) */
+  transform: translate(-50%, -80%) translateY(calc(var(--fill, 0) * var(--rail, 0px)));
   border-radius: 2px;
   background: linear-gradient(to bottom, transparent, var(--gold-hi), transparent);
   box-shadow:

@@ -12,16 +12,34 @@ export default function ScrollProgress() {
 
   useEffect(() => {
     const el = ref.current;
-    const onScroll = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      el.style.setProperty("--read", max > 0 ? clamp01(scrollY / max) : 0);
+    // a altura rolável é medida só quando muda (resize, o documento crescer
+    // ou encolher — os espaçadores dos pins do GSAP inclusive), não a cada
+    // evento de rolagem: ler scrollHeight ali forçava um layout sempre que
+    // algo tinha mexido no DOM desde o último quadro
+    let max = 0;
+    let last = "";
+    const measure = () => {
+      max = document.documentElement.scrollHeight - window.innerHeight;
     };
+    const onScroll = () => {
+      const v = String(max > 0 ? clamp01(scrollY / max) : 0);
+      if (v === last) return;
+      last = v;
+      el.style.setProperty("--read", v);
+    };
+    const onResize = () => {
+      measure();
+      onScroll();
+    };
+    const ro = new ResizeObserver(onResize);
+    ro.observe(document.body);
     addEventListener("scroll", onScroll, { passive: true });
-    addEventListener("resize", onScroll);
-    onScroll();
+    addEventListener("resize", onResize);
+    onResize();
     return () => {
+      ro.disconnect();
       removeEventListener("scroll", onScroll);
-      removeEventListener("resize", onScroll);
+      removeEventListener("resize", onResize);
     };
   }, []);
 

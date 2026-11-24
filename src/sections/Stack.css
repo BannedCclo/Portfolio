@@ -193,3 +193,11 @@
   z-index: var(--z-beam);
   pointer-events: none;
 }
+/* altura constante (barra de endereço recolhida): a barra mudando a altura
+   da tela no celular não realoca o buffer — ver .binary-flow em base.css */
+@supports (height: 100lvh) {
+  .stack-logos {
+    bottom: auto;
+    height: 100lvh;
+  }
+}

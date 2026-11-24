@@ -166,16 +166,31 @@ export function createBeamPoints(geometry, count, noiseGLSL) {
   const pos = new Float32Array(n * 3);
   const seed = new Float32Array(n * 4);
   const stride = src.count / n;
+  // No modo dígito só GLYPH_KEEP das partículas aparece; as outras eram
+  // escondidas no fim do vertex shader — depois de rodar o shader inteiro
+  // (ruído da dissolução, vórtice) para nada, ~78% dos vértices a cada
+  // quadro. A mesma regra (a mesma conta do shader, abaixo) agora decide
+  // aqui, uma vez: só as que apareceriam entram na geometria. Mesma
+  // distribuição pela malha, mesma quantidade visível.
+  const hidden = (s) => {
+    const v = s[3] * 7.31 + s[1] * 3.7;
+    return v - Math.floor(v) > GLYPH_KEEP;
+  };
+  const s4 = [0, 0, 0, 0];
+  let kept = 0;
   for (let i = 0; i < n; i++) {
+    for (let k = 0; k < 4; k++) s4[k] = Math.random();
+    if (BEAM_GLYPHS && hidden(s4)) continue;
     const j = Math.min(src.count - 1, Math.floor((i + Math.random()) * stride));
-    pos[i * 3] = src.getX(j);
-    pos[i * 3 + 1] = src.getY(j);
-    pos[i * 3 + 2] = src.getZ(j);
-    for (let k = 0; k < 4; k++) seed[i * 4 + k] = Math.random();
+    pos[kept * 3] = src.getX(j);
+    pos[kept * 3 + 1] = src.getY(j);
+    pos[kept * 3 + 2] = src.getZ(j);
+    for (let k = 0; k < 4; k++) seed[kept * 4 + k] = s4[k];
+    kept++;
   }
   const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  g.setAttribute("aSeed", new THREE.BufferAttribute(seed, 4));
+  g.setAttribute("position", new THREE.BufferAttribute(pos.subarray(0, kept * 3), 3));
+  g.setAttribute("aSeed", new THREE.BufferAttribute(seed.subarray(0, kept * 4), 4));
   // as partículas saem muito da caixa da malha: sem isso o frustum culling
   // as cortaria no meio do caminho
   g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4);

@@ -856,12 +856,21 @@ let beamSnap = true;
 const heroBgColor = new THREE.Color(HERO_BG);
 const pageBgColor = new THREE.Color(PAGE_BG);
 let portraitEl = null;
+let portraitRect = null;
+
+/** Lido na fase de medição do palco (act.measure, stage.js), antes de
+ *  qualquer escrita no DOM do quadro — ler aqui dentro do update() forçava
+ *  um layout síncrono a cada quadro. */
+function measurePortrait() {
+  if (!portraitEl?.isConnected) portraitEl = document.querySelector(".depth-portrait");
+  portraitRect = portraitEl ? portraitEl.getBoundingClientRect() : null;
+}
 
 /** centro (de trás) da cabeça do retrato, em px da janela; null sem retrato */
 function headScreenPoint() {
-  if (!portraitEl?.isConnected) portraitEl = document.querySelector(".depth-portrait");
-  if (!portraitEl) return null;
-  const r = portraitEl.getBoundingClientRect();
+  if (!portraitRect) measurePortrait();
+  const r = portraitRect;
+  if (!r) return null;
   // o ponto de entrada que o próprio retrato publica (no cabelo); antes de
   // ele montar, uma estimativa fixa
   const f = portraitLight.entry ?? HEAD_IN_PORTRAIT;
@@ -1031,6 +1040,7 @@ export function initHero() {
     el: section,
     group: brainGroup,
     update,
+    measure: measurePortrait,
     setActive(active) {
       // the blur belongs to the hero alone — leave the shared canvas clean
       // for every other act

@@ -58,6 +58,11 @@ export function createBeamOverlay(quality) {
   fit();
 
   let drawn = false;
+  // apagado, o canvas de tela cheia sai da composição: fora da saída do
+  // hero ele está sempre vazio, e no celular cada camada transparente do
+  // tamanho da tela ainda custa a mistura a cada quadro. Por classe, não por
+  // style.visibility: esse é do contextGuard (contexto perdido) e vence
+  canvas.classList.add("is-empty");
 
   /* Ancorado no documento ou fixo na tela.
      Fixo (o normal), o canvas fica parado enquanto a página rola, e o desenho
@@ -100,12 +105,14 @@ export function createBeamOverlay(quality) {
       camera.layers.set(BEAM_LAYER);
       renderer.render(points, camera);
       camera.layers.mask = saved;
+      if (!drawn) canvas.classList.remove("is-empty");
       drawn = true;
     },
     /** apaga o que ficou desenhado (uma vez) */
     clear() {
       if (!drawn) return;
       renderer.clear();
+      canvas.classList.add("is-empty");
       drawn = false;
     },
     dispose() {

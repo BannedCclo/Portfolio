@@ -1,13 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../lib/i18n/LanguageContext.jsx";
 import { mountEnvelope3D } from "../three/envelope3d.js";
-import {
-  DEFAULT_COUNTRY,
-  countryOptions,
-  formatPhone,
-  phonePlaceholder,
-} from "../lib/phone.js";
 import "./Contact.css";
+
+/* A libphonenumber-js (lib/phone.js: metadados e exemplos de todos os
+   países) é um pedaço grande do JS que só o formulário usa. Fica num
+   arquivo à parte, buscado quando a página fica ociosa (ou antes, se o
+   visitante for direto ao DDI ou ao telefone): sai do pacote que o celular
+   precisa baixar e compilar antes do primeiro quadro. Até chegar, o DDI fica
+   no padrão e o telefone aceita só dígitos; quando chega, o que já foi
+   digitado ganha a máscara. */
+const DEFAULT_COUNTRY = "BR";
+const DEFAULT_DDI = "55";
+let phoneLib = null;
+let phonePromise = null;
+function loadPhoneLib() {
+  phonePromise ??= import("../lib/phone.js").then((m) => (phoneLib = m));
+  return phonePromise;
+}
+function adoptPhoneLib(m, setPhoneKit, setForm) {
+  setPhoneKit(m);
+  setForm((f) => (f.phone ? { ...f, phone: m.formatPhone(f.phone, f.country) } : f));
+}
+/** só o país padrão, enquanto a lista completa não chega */
+function defaultCountryOnly(lang) {
+  let name = DEFAULT_COUNTRY;
+  try {
+    name =
+      new Intl.DisplayNames([lang === "en" ? "en" : "pt-BR"], { type: "region" }).of(
+        DEFAULT_COUNTRY,
+      ) ?? name;
+  } catch {
+    // sem Intl.DisplayNames: fica o código ISO (como em lib/phone.js)
+  }
+  return [{ code: DEFAULT_COUNTRY, ddi: DEFAULT_DDI, name }];
+}
 
 const EMPTY_FORM = {
   firstName: "",
@@ -21,21 +48,22 @@ const EMPTY_FORM = {
 
 /* A logo (Assets/Logo, ícone bold) gravada no lacre em relevo negativo:
    o mesmo traço duas vezes — um claro deslocado para baixo/direita (a borda
-   do sulco que pega luz) e um escuro por cima (o fundo do sulco na sombra). */
+   do sulco que pega luz) e um escuro por cima (o fundo do sulco na sombra).
+   A linha, o anel e a diagonal são um traço só: separados, as pontas
+   retas deixavam "dentes" nas quinas. O cursor tem haste fina e barras
+   mais largas que ela, para continuar lendo como cursor no traço grosso. */
 const LOGO_PATHS = [
-  ["M184 100C184 119.14 177.463 137.706 165.473 152.624C153.482 167.543 136.756 177.919 118.063 182.035C99.3713 186.151 79.8339 183.76 62.686 175.257C45.5381 166.755 31.808 152.652 23.7688 135.282C15.7296 117.912 13.8634 98.3175 18.4793 79.7424C23.0951 61.1674 33.9161 44.7256 49.1508 33.1393C64.3855 21.5529 83.1202 15.5168 102.253 16.0302C121.386 16.5437 139.77 23.5759 154.362 35.9626", 9],
-  ["M185 100H135", 9],
+  ["M135 100H184C184 119.14 177.463 137.706 165.473 152.624C153.482 167.543 136.756 177.919 118.063 182.035C99.3713 186.151 79.8339 183.76 62.686 175.257C45.5381 166.755 31.808 152.652 23.7688 135.282C15.7296 117.912 13.8634 98.3175 18.4793 79.7424C23.0951 61.1674 33.9161 44.7256 49.1508 33.1393C64.3855 21.5529 83.1202 15.5168 102.253 16.0302C121.386 16.5437 139.77 23.5759 154.362 35.9626L153.5 35.5L100 100", 9],
   ["M66 143V59L100 100L134 59V143", 9],
-  ["M100 100L153.5 35.5", 9],
-  ["M147 127V74", 13],
-  ["M143 75H151", 9],
-  ["M143 126H151", 9],
+  ["M149 127V74", 7],
+  ["M142 75H156", 7],
+  ["M142 126H156", 7],
 ];
 function SealMark() {
   const strokes = (cls, dx, dy) => (
     <g className={cls} transform={`translate(${dx} ${dy})`} fill="none">
       {LOGO_PATHS.map(([d, w]) => (
-        <path key={d} d={d} strokeWidth={w} strokeLinecap="butt" />
+        <path key={d} d={d} strokeWidth={w} strokeLinecap="butt" strokeLinejoin="round" />
       ))}
     </g>
   );
@@ -280,7 +308,31 @@ export default function Contact() {
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const countries = useMemo(() => countryOptions(lang), [lang]);
+  const [phoneKit, setPhoneKit] = useState(phoneLib);
+  useEffect(() => {
+    if (phoneKit) return;
+    let alive = true;
+    const go = () =>
+      loadPhoneLib().then((m) => alive && adoptPhoneLib(m, setPhoneKit, setForm));
+    const ric = window.requestIdleCallback;
+    const id = ric ? ric(go, { timeout: 4000 }) : setTimeout(go, 1500);
+    return () => {
+      alive = false;
+      if (ric) window.cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, [phoneKit]);
+  // foco no DDI/telefone antes da hora ociosa: busca já
+  const wakePhone = () => {
+    if (!phoneKit) loadPhoneLib().then((m) => adoptPhoneLib(m, setPhoneKit, setForm));
+  };
+
+  const countries = useMemo(
+    () => (phoneKit ? phoneKit.countryOptions(lang) : defaultCountryOnly(lang)),
+    [phoneKit, lang],
+  );
+  const formatPhone = (raw, country) =>
+    phoneKit ? phoneKit.formatPhone(raw, country) : raw.replace(/\D/g, "").slice(0, 17);
 
   // a máscara segue o país escolhido (lib/phone.js)
   const handlePhoneChange = (e) => {
@@ -423,6 +475,7 @@ export default function Contact() {
                   aria-label={contact.country}
                   autoComplete="tel-country-code"
                   value={values.country}
+                  onFocus={wakePhone}
                   onChange={on(handleCountryChange)}
                 >
                   {countries.map((c) => (
@@ -440,8 +493,9 @@ export default function Contact() {
                 autoComplete="tel-national"
                 required
                 maxLength={25}
-                placeholder={phonePlaceholder(values.country)}
+                placeholder={phoneKit ? phoneKit.phonePlaceholder(values.country) : ""}
                 value={values.phone}
+                onFocus={wakePhone}
                 onChange={on(handlePhoneChange)}
               />
             </div>

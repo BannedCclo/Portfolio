@@ -20,7 +20,6 @@ import {
 } from "libphonenumber-js";
 import examples from "libphonenumber-js/mobile/examples";
 
-export const DEFAULT_COUNTRY = "BR";
 const BINARY_155 = (155).toString(2); // "10011011"
 
 /** Países com DDI, ordenados pelo nome no idioma dado. */

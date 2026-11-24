@@ -148,13 +148,17 @@ const LIGHT_FRAG = /* glsl */ `
   uniform vec2 uResolution;
   varying vec2 vQ;
   void main() {
-    vec4 l = uplight(vQ);
     // some antes das bordas do canvas (a de baixo é do mask-image da página)
     vec2 s = gl_FragCoord.xy / uResolution;
     // arredondado (sem cantos de caixa); abaixo de 35% da altura só pesa o x
     vec2 d = (s - vec2(0.5, 0.35)) * vec2(1.0, 0.8);
     d.y = max(d.y, 0.0);
     float edge = 1.0 - smoothstep(0.2, 0.5, length(d));
+    // alfa zero de qualquer jeito (luz apagada até o feixe chegar, ou fora
+    // do arredondado): descarta antes das 8 amostras de ruído do uplight —
+    // com a mistura normal, um fragmento de alfa 0 não muda nada
+    if (edge <= 0.0 || uLightGain <= 0.0) discard;
+    vec4 l = uplight(vQ);
     gl_FragColor = vec4(l.rgb, clamp(l.a * edge, 0.0, 1.0));
   }
 `;
@@ -213,10 +217,28 @@ const FRAG = /* glsl */ `
     vec4 c = texture2D(uColor, vUv);
     if (c.a < 0.004) discard;
     vec2 q = (vFrameUv - 0.5) * vec2(uAspect, 1.0);
-    vec4 l = uplight(q);
+    // a cor da luz é constante (a de uplight()); só a intensidade varia
+    vec3 lightRgb = vec3(250.0, 209.0, 128.0) / 255.0;
+    // A intensidade (uplight: 8 amostras de ruído) só é calculada onde ela
+    // entra no resultado — antes era calculada em todo pixel de toda camada,
+    // até duas vezes. Os atalhos dão exatamente o mesmo valor que a conta
+    // inteira: com a luz apagada (uLightGain 0, até o feixe chegar) uplight
+    // vale 0; fora do cabelo, no miolo opaco e longe do contorno, o termo
+    // que a usaria já é multiplicado por 0.
+    bool lit = uLightGain > 0.0;
+
     // só no cabelo: no casaco o alfa parcial é o contorno irregular do
-    // recorte, e acendê-lo desenha uma linha serrilhada
-    float strands = 4.0 * c.a * (1.0 - c.a) * uRim * l.a * uStrands;
+    // recorte, e acendê-lo desenha uma linha serrilhada. 4·a·(1−a) zera no
+    // miolo opaco (a = 1)
+    float strands = 0.0;
+    if (lit && uStrands > 0.5 && c.a < 1.0) {
+      strands = 4.0 * c.a * (1.0 - c.a) * uRim * uplight(q).a;
+    }
+
+    // a luz de trás só "come" a borda do que é escuro (casaco, cabelo); em
+    // pele e camisa, que já são claras, ela vira um brilho estranho
+    float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    float darkness = mix(0.12, 1.0, 1.0 - smoothstep(0.22, 0.6, lum));
 
     // faixa por dentro do contorno, só da silhueta desfocada (a nítida, a
     // 1/4 da resolução, fazia degraus): máxima na borda (G ≈ 0,5), some para
@@ -225,24 +247,24 @@ const FRAG = /* glsl */ `
     float g0 = texture2D(uSil, vFrameUv).g;
     float band = 1.0 - smoothstep(0.42, 0.95, g0);
     band *= band * smoothstep(0.15, 1.0, c.a);
-    // normal para fora: o desfocado cai na direção de fora da figura
-    vec2 dx = vec2(uSilTexel.x * 2.0, 0.0), dy = vec2(0.0, uSilTexel.y * 2.0);
-    vec2 grad = vec2(texture2D(uSil, vFrameUv + dx).g - texture2D(uSil, vFrameUv - dx).g,
-                     texture2D(uSil, vFrameUv + dy).g - texture2D(uSil, vFrameUv - dy).g);
-    float glen = length(grad);
-    vec2 outward = glen > 1e-4 ? -grad / glen : vec2(0.0);
-    // a luz que está logo atrás deste trecho da borda
-    vec2 qOut = q + outward * uEdgeWidth * 1.6 * uSilTexel * vec2(uAspect, 1.0);
-    float behind = uplight(qOut).a;
-    // a luz de trás só "come" a borda do que é escuro (casaco, cabelo); em
-    // pele e camisa, que já são claras, ela vira um brilho estranho
-    float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    float darkness = mix(0.12, 1.0, 1.0 - smoothstep(0.22, 0.6, lum));
-    float edgeRim = band * behind * darkness * uEdgeRim * uRimLayer;
+    float edgeRim = 0.0;
+    // uSil não tem mipmaps: amostrar dentro do if é seguro
+    if (lit && band * uRimLayer > 0.0) {
+      // normal para fora: o desfocado cai na direção de fora da figura
+      vec2 dx = vec2(uSilTexel.x * 2.0, 0.0), dy = vec2(0.0, uSilTexel.y * 2.0);
+      vec2 grad = vec2(texture2D(uSil, vFrameUv + dx).g - texture2D(uSil, vFrameUv - dx).g,
+                       texture2D(uSil, vFrameUv + dy).g - texture2D(uSil, vFrameUv - dy).g);
+      float glen = length(grad);
+      vec2 outward = glen > 1e-4 ? -grad / glen : vec2(0.0);
+      // a luz que está logo atrás deste trecho da borda
+      vec2 qOut = q + outward * uEdgeWidth * 1.6 * uSilTexel * vec2(uAspect, 1.0);
+      float behind = uplight(qOut).a;
+      edgeRim = band * behind * darkness * uEdgeRim * uRimLayer;
+    }
 
-    vec3 add = l.rgb * (strands * mix(0.4, 1.0, darkness) + edgeRim);
+    vec3 add = lightRgb * (strands * mix(0.4, 1.0, darkness) + edgeRim);
     // luz saindo de dentro da cabeça: atravessa pele e cabelo
-    add += l.rgb * headGlow(q, uHeadR) * 0.85;
+    add += lightRgb * headGlow(q, uHeadR) * 0.85;
     // "screen": clareia sem estourar os brancos da foto
     c.rgb = 1.0 - (1.0 - c.rgb) * (1.0 - clamp(add, 0.0, 1.0));
 

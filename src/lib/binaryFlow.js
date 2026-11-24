@@ -115,25 +115,46 @@ export function initBinaryFlow() {
 
   let dpr = 1;
   let sprites = null;
+  // w/h: a tela (o que a lógica e o desenho usam); bufW/bufH: o tamanho do
+  // canvas, que tem a altura da tela com a barra de endereço recolhida
+  // (100lvh, base.css). Assim a barra aparecer/sumir no celular não
+  // realoca o buffer no meio da rolagem
   let w = 0;
   let h = 0;
+  let bufW = 0;
+  let bufH = 0;
   function fit() {
     const nd = Math.min(window.devicePixelRatio || 1, 1.5);
+    // os sprites só dependem da razão de pixels: antes eram refeitos (seis
+    // canvas com sombra) a cada mudança de altura da tela
+    if (nd !== dpr || !sprites) {
+      dpr = nd;
+      sprites = makeSprites(dpr);
+      bufW = 0;
+    }
     // o tamanho real do canvas na tela, não innerWidth: innerWidth inclui a
     // barra de rolagem, que o canvas (fixed, 100%) não cobre — medir por ele
     // comprimia o desenho na horizontal e os dígitos saíam deslocados da
     // linha, mais quanto mais à direita
-    const nw = canvas.clientWidth || document.documentElement.clientWidth;
-    const nh = canvas.clientHeight || window.innerHeight;
-    if (nw === w && nh === h && nd === dpr && sprites) return;
-    w = nw;
-    h = nh;
-    dpr = nd;
+    w = canvas.clientWidth || document.documentElement.clientWidth;
+    h = window.innerHeight;
+    const bh = canvas.clientHeight || h;
+    if (w === bufW && bh === bufH) return;
+    bufW = w;
+    bufH = bh;
     canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    sprites = makeSprites(dpr);
+    canvas.height = Math.round(bh * dpr);
   }
   fit();
+  // vazio, o canvas de tela cheia sai da composição: no celular cada camada
+  // transparente do tamanho da tela ainda custa a mistura a cada quadro
+  let shown = true;
+  const show = (on) => {
+    if (on === shown) return;
+    shown = on;
+    canvas.style.visibility = on ? "" : "hidden";
+  };
+  show(false);
 
   /* Partículas: cada uma tem um card alvo (índice entre os visíveis), um
      ponto dentro dele (u, v) e um atraso que cresce com v — o card se
@@ -190,11 +211,34 @@ export function initBinaryFlow() {
   const forms = new Array(cards.length).fill(-1);
   // últimos valores escritos nas variáveis do trilho: só reescreve o que
   // mudou, para não invalidar o estilo à toa a cada quadro
-  const wrapVars = { "--fill": "", "--drain": "", "--unzip": "", "--pulse-alpha": "" };
+  const wrapVars = {
+    "--fill": "",
+    "--drain": "",
+    "--unzip": "",
+    "--pulse-alpha": "",
+    "--span": "",
+    "--span-safe": "",
+    "--rail": "",
+  };
+  // Gravadas só nos elementos-folha que as leem (About.css): o preenchimento
+  // e a ponta. No .timeline-wrap, a herança fazia cada mudança recalcular o
+  // estilo de todos os caracteres da timeline — ~10 ms por quadro rolando.
+  const fillEl = wrap.querySelector(".timeline__fill");
+  const pulseEl = wrap.querySelector(".timeline__pulse");
+  const VAR_TARGETS = {
+    "--fill": [pulseEl],
+    "--drain": [fillEl],
+    "--unzip": [fillEl],
+    "--pulse-alpha": [pulseEl],
+    "--span": [fillEl],
+    "--span-safe": [fillEl],
+    // comprimento do trilho em px (só muda com o tamanho da timeline)
+    "--rail": [fillEl, pulseEl],
+  };
   const setWrapVar = (k, v) => {
     if (wrapVars[k] === v) return;
     wrapVars[k] = v;
-    wrap.style.setProperty(k, v);
+    for (const el of VAR_TARGETS[k]) el?.style.setProperty(k, v);
   };
   // assinatura do último quadro desenhado: igual → o canvas já está certo
   let lastKey = "";
@@ -262,14 +306,16 @@ export function initBinaryFlow() {
   // entra no pouso se a página está na zona (e não abaixo do ponto)
   const shouldCapture = (y) => forming() && y >= captureFrom() && y <= lockY + 2;
 
-  const onWheel = (e) => {
+  /* `block`: o evento veio do listener que pode barrar a rolagem (não
+     passivo). Só ele chama preventDefault — o passivo só registra o gesto. */
+  const handleWheel = (e, block) => {
     markInput();
     if (e.deltaY < 0) return cancelLanding();
     if (e.deltaY === 0 || !forming()) return;
     const y = window.scrollY;
     const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? h : 1);
     if (landing || shouldCapture(y) || (y < captureFrom() && y + px >= captureFrom())) {
-      e.preventDefault();
+      if (block) e.preventDefault();
       landing = true;
     }
   };
@@ -277,17 +323,55 @@ export function initBinaryFlow() {
     markInput();
     touchY = e.touches[0]?.clientY ?? 0;
   };
-  const onTouchMove = (e) => {
+  const handleTouchMove = (e, block) => {
     markInput();
     const ny = e.touches[0]?.clientY ?? touchY;
     const dy = touchY - ny; // > 0: dedo subindo = página descendo
     touchY = ny;
     if (dy < 0) return cancelLanding();
     if (dy > 0 && (landing || shouldCapture(window.scrollY))) {
-      e.preventDefault();
+      if (block && e.cancelable) e.preventDefault();
       landing = true;
     }
   };
+
+  /* Listeners que podem barrar a rolagem só existem perto da zona de pouso.
+     Um wheel/touchmove não passivo no window faz o navegador esperar o JS a
+     cada evento antes de rolar — no celular, com o JS e o WebGL ocupando a
+     thread principal, era a página inteira rolando aos trancos, para um
+     pouso que nem existe lá (forming() é só desktop). Fora da zona, os
+     passivos continuam registrando o gesto (markInput, touchY, cancelar o
+     pouso) e a rolagem fica no compositor.
+     O que a trava faz não muda: o navegador só deixa cancelar um touchmove
+     no começo do gesto (depois que a rolagem pegou, eles vêm sem
+     cancelable), então o que vale é o listener existir quando o gesto
+     começa dentro da zona — e o tick o liga antes disso. O que escapa
+     continua com a rede de segurança do onScroll. */
+  let armed = false;
+  const onWheelPassive = (e) => {
+    if (!armed) handleWheel(e, false);
+  };
+  const onTouchMovePassive = (e) => {
+    if (!armed) handleTouchMove(e, false);
+  };
+  const onWheelBlocking = (e) => handleWheel(e, true);
+  const onTouchMoveBlocking = (e) => handleTouchMove(e, true);
+  const setArmed = (on) => {
+    if (on === armed) return;
+    armed = on;
+    if (on) {
+      window.addEventListener("wheel", onWheelBlocking, { passive: false });
+      window.addEventListener("touchmove", onTouchMoveBlocking, { passive: false });
+    } else {
+      window.removeEventListener("wheel", onWheelBlocking);
+      window.removeEventListener("touchmove", onTouchMoveBlocking);
+    }
+  };
+  // armado enquanto um gesto começando agora pode precisar da trava: pousando,
+  // ou com a página na zona de captura (com uma folga acima, para o gesto que
+  // começa logo antes dela)
+  const updateArmed = (y) =>
+    setArmed(landing || (forming() && y >= captureFrom() - h * 0.5 && y <= lockY + 2));
   const DOWN_KEYS = new Set(["ArrowDown", "PageDown", "End", " ", "Spacebar"]);
   const UP_KEYS = new Set(["ArrowUp", "PageUp", "Home"]);
   const onKey = (e) => {
@@ -316,9 +400,9 @@ export function initBinaryFlow() {
     if (forming() && byUser && y > prevY && shouldCapture(y)) landing = true;
     prevY = y;
   };
-  window.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("wheel", onWheelPassive, { passive: true });
   window.addEventListener("touchstart", onTouchStart, { passive: true });
-  window.addEventListener("touchmove", onTouchMove, { passive: false });
+  window.addEventListener("touchmove", onTouchMovePassive, { passive: true });
   window.addEventListener("keydown", onKey);
   window.addEventListener("pointerdown", markInput, { passive: true });
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -356,6 +440,8 @@ export function initBinaryFlow() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawnEmpty = true;
       }
+      show(false);
+      setArmed(false);
       lastKey = "";
       return;
     }
@@ -371,6 +457,7 @@ export function initBinaryFlow() {
     lockY = desktopMql.matches
       ? workRect.top + scrollY
       : trackRect.top - h * 0.3 + scrollY;
+    updateArmed(scrollY);
     const target = targetSignal(tlRect, pinRect, trackRect);
     signal = stepSignal(signal, target, dt);
     progress = clamp01(signal - 1);
@@ -384,7 +471,8 @@ export function initBinaryFlow() {
 
     // nada mudou desde o último quadro (sinal parado, nada se mexeu na
     // tela): o canvas, as variáveis e os cards já estão certos
-    let key = `${signal.toFixed(5)}|${tlRect.top}|${tlRect.left}|${tlRect.height}|${w}|${h}|${dpr}`;
+    // bufH: o buffer realocado volta zerado e precisa ser redesenhado
+    let key = `${signal.toFixed(5)}|${tlRect.top}|${tlRect.left}|${tlRect.height}|${w}|${h}|${dpr}|${bufH}`;
     for (const i of targets) {
       const r = rects[i];
       key += `|${r.left}|${r.top}|${r.width}|${r.height}`;
@@ -418,6 +506,10 @@ export function initBinaryFlow() {
     });
     setWrapVar("--drain", drain.toFixed(4));
     setWrapVar("--unzip", unzip.toFixed(3));
+    const span = Math.max(0, fill - drain);
+    setWrapVar("--span", span.toFixed(4));
+    setWrapVar("--span-safe", Math.max(span, 0.001).toFixed(4));
+    setWrapVar("--rail", `${Math.max(0, tlRect.height - 1.2 * emPx).toFixed(1)}px`);
     // a ponta brilhante só corre pela linha; ao fim, quem brilha são os dígitos
     setWrapVar("--pulse-alpha", signal > 0.004 && progress < 0.02 ? "1" : "0");
 
@@ -426,7 +518,9 @@ export function initBinaryFlow() {
     const total = new Array(MAX_TARGETS).fill(0);
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+    // já vazio (o caso comum: rolando pela timeline antes da corrente),
+    // não há o que limpar; bufH ≥ h cobre o que passou da borda de baixo
+    if (!drawnEmpty) ctx.clearRect(0, 0, w, bufH);
     ctx.globalCompositeOperation = "lighter";
     drawnEmpty = true;
 
@@ -519,6 +613,7 @@ export function initBinaryFlow() {
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
+    show(!drawnEmpty);
 
     // --form por card: alvos seguem os dígitos pousados; o resto fica pronto
     let allReady = true;
@@ -546,15 +641,18 @@ export function initBinaryFlow() {
 
   return () => {
     unsubscribeTick();
-    window.removeEventListener("wheel", onWheel);
+    setArmed(false);
+    window.removeEventListener("wheel", onWheelPassive);
     window.removeEventListener("touchstart", onTouchStart);
-    window.removeEventListener("touchmove", onTouchMove);
+    window.removeEventListener("touchmove", onTouchMovePassive);
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("pointerdown", markInput);
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", measure);
     ro.disconnect();
-    ["--fill", "--drain", "--unzip", "--pulse-alpha"].forEach((k) => wrap.style.removeProperty(k));
+    for (const [k, els] of Object.entries(VAR_TARGETS)) {
+      for (const el of els) el?.style.removeProperty(k);
+    }
     marks.forEach((m) => m.classList.remove("is-lit"));
     canvas.remove();
     work.classList.remove("is-printed");

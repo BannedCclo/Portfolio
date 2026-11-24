@@ -288,7 +288,10 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
     const w = front.clientWidth;
     const h = front.clientHeight;
     if (!w || !h) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, quality.maxDpr ?? 1.5);
+    // resolução própria, não a do palco (quality.maxDpr, que no celular é
+    // 1×): o envelope é pequeno e só redesenha quando algo muda, e em 1× numa
+    // tela de 3× o desenho do lacre — poucas dezenas de px — virava borrão
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const fw = fx.clientWidth;
     const fh = fx.clientHeight;
     Object.assign(size, { w, h, fw, fh, dpr });
