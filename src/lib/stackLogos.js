@@ -12,8 +12,11 @@
    sem salto.
 
    Os logos vêm do simple-icons (CC0): o caminho SVG de cada um é amostrado
-   numa grade (isPointInPath) — cada célula preenchida vira um dígito. Só roda com mouse (hover de verdade) e sem reduced motion; quem
-   carrega este módulo é lib/sections/stack.js, quando a seção chega perto.
+   numa grade (isPointInPath) — cada célula preenchida vira um dígito. Só
+   roda sem reduced motion; quem carrega este módulo é lib/sections/stack.js,
+   quando a seção chega perto. Sem hover (telas de toque), tocar num item
+   abre o logo dele (fechando o que estiver aberto), tocar de novo nele ou
+   em qualquer outro lugar fecha.
    =========================================================== */
 
 import {
@@ -197,8 +200,11 @@ function sampleIcon(icon) {
   return pts;
 }
 
-/** @param {HTMLElement} section #stack */
-export function initStackLogos(section) {
+/**
+ * @param {HTMLElement} section #stack
+ * @param {{ hover?: boolean }} [opts] hover: false → abre no toque, não no hover
+ */
+export function initStackLogos(section, { hover = true } = {}) {
   const items = [...section.querySelectorAll(".stack__group li")].filter(
     (li) => ICONS[li.textContent.trim()],
   );
@@ -278,16 +284,32 @@ export function initStackLogos(section) {
   const onLeave = (st) => () => {
     st.target = 0;
   };
-  const handlers = states.map((st) => {
-    const enter = onEnter(st);
-    const leave = onLeave(st);
-    st.li.addEventListener("pointerenter", enter);
-    st.li.addEventListener("pointerleave", leave);
-    return () => {
-      st.li.removeEventListener("pointerenter", enter);
-      st.li.removeEventListener("pointerleave", leave);
+  const handlers = hover
+    ? states.map((st) => {
+        const enter = onEnter(st);
+        const leave = onLeave(st);
+        st.li.addEventListener("pointerenter", enter);
+        st.li.addEventListener("pointerleave", leave);
+        return () => {
+          st.li.removeEventListener("pointerenter", enter);
+          st.li.removeEventListener("pointerleave", leave);
+        };
+      })
+    : [];
+
+  // toque: um clique só no documento decide tudo — no item, abre ele (ou
+  // fecha, se já estava aberto) e fecha os outros; fora, fecha todos
+  if (!hover) {
+    const onTap = (e) => {
+      const li = e.target instanceof Element ? e.target.closest(".stack__group li") : null;
+      for (const st of states) {
+        if (st.li === li && st.target === 0) onEnter(st)();
+        else st.target = 0;
+      }
     };
-  });
+    document.addEventListener("click", onTap);
+    handlers.push(() => document.removeEventListener("click", onTap));
+  }
 
   let drawn = false;
   let time = 0;

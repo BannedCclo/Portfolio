@@ -27,6 +27,7 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { isNearRect } from "../lib/motion.js";
+import { guardContextLoss } from "./contextGuard.js";
 
 const reduceMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
@@ -128,6 +129,9 @@ export const renderer = new THREE.WebGLRenderer({
   alpha: false,
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.maxDpr));
+// contexto derrubado pelo navegador: esconde o canvas em vez de deixar a
+// página branca (three/contextGuard.js)
+guardContextLoss(renderer.domElement);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.95;
 renderer.outputColorSpace = THREE.SRGBColorSpace;

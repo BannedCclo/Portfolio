@@ -19,13 +19,14 @@ const reduceMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
 
-/* O pin da galeria vale em qualquer tela: a rolagem vertical anda a
-   galeria na horizontal igual no celular, numa janela baixa ou no desktop.
-   Em telas baixas os cards se comprimem para caber (Work.css, "cards em
-   telas baixas"). "all" mantém o gsap.matchMedia abaixo — ele ainda cria e
-   desfaz o trigger direitinho no resize. Só o movimento reduzido fica sem
-   pin (faixa nativa, initReducedMotionTrack). */
-const DESKTOP_QUERY = "all";
+/* O pin da galeria (rolagem vertical andando a galeria na horizontal) só
+   vale a partir de 820px — o mesmo corte do resto da página. No celular a
+   faixa é rolada na horizontal com o dedo, nativa (Work.css, "galeria no
+   celular"): a rolagem vertical passa direto pela seção. Em telas baixas os
+   cards se comprimem para caber (Work.css, "cards em telas baixas"). O
+   gsap.matchMedia abaixo cria e desfaz o trigger ao cruzar o corte. O
+   movimento reduzido também fica sem pin (initReducedMotionTrack). */
+const DESKTOP_QUERY = "(min-width: 820px)";
 const isDesktop = () => window.matchMedia(DESKTOP_QUERY).matches;
 
 /** Movimento reduzido: sem pin, sem ScrollTrigger — a faixa é uma lista
@@ -174,6 +175,8 @@ export function initWork() {
       track.style.transform = "";
     };
   });
+  // no celular a faixa é rolável: começa sempre do primeiro card
+  if (!isDesktop()) track.scrollLeft = 0;
 
   // valores já escritos em cada card: só reescreve o que mudou
   const written = new Map(cards.map((c) => [c, { focus: "", tx: "", ty: "" }]));

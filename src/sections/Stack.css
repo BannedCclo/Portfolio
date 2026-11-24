@@ -43,6 +43,11 @@
 
 .stack__group li {
   position: relative;
+  /* os itens são gatilho do logo (hover ou toque), não texto para copiar:
+     sem seleção e sem o flash azul do toque no celular */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   font-family: var(--font-mono);
   font-size: var(--fs-3);
   color: var(--ink-dim);

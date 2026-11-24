@@ -19,6 +19,7 @@
    =========================================================== */
 
 import * as THREE from "three";
+import { guardContextLoss } from "./contextGuard.js";
 
 /** camada (THREE.Layers) das partículas: fora da do palco (0) */
 export const BEAM_LAYER = 1;
@@ -40,6 +41,8 @@ export function createBeamOverlay(quality) {
   });
   renderer.setClearColor(0x000000, 0);
   renderer.autoClear = true;
+  // contexto derrubado pelo navegador: esconde o canvas (three/contextGuard.js)
+  guardContextLoss(canvas);
 
   let w = 0;
   let h = 0;

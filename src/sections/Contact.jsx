@@ -493,8 +493,10 @@ export default function Contact() {
             {st === "sending" ? contact.submitting : contact.submit}
           </button>
 
-          {st === "success" && (
-            <p className="contact__status contact__status--ok" role={frozen ? undefined : "status"}>
+          {/* sucesso: sem texto na tela — o envelope voando já diz que foi
+              enviada. Só leitores de tela ouvem a confirmação */}
+          {st === "success" && !frozen && (
+            <p className="contact__status--sr" role="status">
               {contact.success}
             </p>
           )}

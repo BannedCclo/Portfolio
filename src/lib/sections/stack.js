@@ -47,11 +47,12 @@ export function initStack() {
   );
   groups.forEach((g) => io.observe(g));
 
-  // logos em dígitos no hover: só com mouse e sem reduced motion; o módulo
-  // (e os ícones) só carrega quando a seção chega perto
+  // logos em dígitos: no hover com mouse, no toque sem ele (stackLogos.js);
+  // nunca com reduced motion. O módulo (e os ícones) só carrega quando a
+  // seção chega perto
   const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!canHover || reduce) {
+  if (reduce) {
     return () => {
       io.disconnect();
     };
@@ -65,7 +66,7 @@ export function initStack() {
       near.disconnect();
       import("../stackLogos.js")
         .then(({ initStackLogos }) => {
-          if (!disposed) disposeLogos = initStackLogos(section);
+          if (!disposed) disposeLogos = initStackLogos(section, { hover: canHover });
         })
         .catch((err) => console.warn("Logos das ferramentas indisponíveis:", err));
     },

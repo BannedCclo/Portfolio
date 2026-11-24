@@ -26,8 +26,9 @@ const reduceMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
 
-// mesma condição do pin da galeria (lib/sections/work.js): hoje, toda tela
-const DESKTOP_QUERY = "all";
+// mesma condição do pin da galeria (lib/sections/work.js): a partir de
+// 820px. No celular não há pin nem pouso — a rolagem nunca é travada
+const DESKTOP_QUERY = "(min-width: 820px)";
 
 const PER_CARD = 340; // dígitos por card impresso
 const TRAVEL = 0.3; // fração do progresso que cada dígito leva no caminho
@@ -250,7 +251,10 @@ export function initBinaryFlow() {
   let lastInput = -Infinity; // último gesto do usuário (ms)
   let prevY = window.scrollY;
   let touchY = 0;
-  const forming = () => work.dataset.cardsReady === "0" && lockY !== Infinity;
+  // só no desktop: no celular a galeria não tem pin e a página nunca é
+  // segurada — os cards se imprimem enquanto ela passa
+  const forming = () =>
+    desktopMql.matches && work.dataset.cardsReady === "0" && lockY !== Infinity;
   // a zona de captura: quanto antes do ponto a rolagem deixa de empurrar
   const captureFrom = () => lockY - Math.min(260, h * 0.28);
   const markInput = () => (lastInput = performance.now());

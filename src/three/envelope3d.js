@@ -147,33 +147,62 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
   let visible = false;
   const cleanups = [];
 
-  const makeRenderer = (canvas) => {
-    const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    r.setClearColor(0x000000, 0);
-    r.outputColorSpace = THREE.SRGBColorSpace;
-    // segura os brancos do papel (sem isso o relevo estoura) e o brilho do ouro
-    r.toneMapping = THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = EXPOSURE;
-    // sombras de verdade: a aba e o lacre sobre o bolso, as abas do bolso
-    // sobre o fundo — é o que tira o envelope do "recorte chapado"
-    r.shadowMap.enabled = quality.tier !== "low";
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
-    return r;
-  };
-  let rBack;
-  let rFront;
-  let rFx;
+  /* Um contexto WebGL só, numa tela fora do DOM; as três telas da página são
+     2D e recebem uma cópia (drawImage) logo depois de cada desenho. Antes
+     eram três contextos por envelope — seis durante o envio, com dois
+     envelopes montados — e, somados ao palco, ao feixe e ao retrato, o
+     celular (iOS sobretudo) estourava a memória e descartava o contexto
+     mais antigo: o do palco, que ficava branco com o ícone de erro. */
+  let renderer;
+  let ctxBack;
+  let ctxFront;
+  let ctxFx;
   try {
-    rBack = makeRenderer(back);
-    rFront = makeRenderer(front);
-    rFx = makeRenderer(fx);
+    renderer = new THREE.WebGLRenderer({
+      canvas: document.createElement("canvas"),
+      alpha: true,
+      antialias: true,
+    });
+    ctxBack = back.getContext("2d");
+    ctxFront = front.getContext("2d");
+    ctxFx = fx.getContext("2d");
+    if (!ctxBack || !ctxFront || !ctxFx) throw new Error("sem canvas 2D");
   } catch {
     // sem WebGL: fica o envelope de CSS
-    rBack?.dispose();
-    rFront?.dispose();
+    renderer?.dispose();
+    renderer?.forceContextLoss();
     onFail?.();
     return () => {};
   }
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // segura os brancos do papel (sem isso o relevo estoura) e o brilho do ouro
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = EXPOSURE;
+  // sombras de verdade: a aba e o lacre sobre o bolso, as abas do bolso
+  // sobre o fundo — é o que tira o envelope do "recorte chapado"
+  renderer.shadowMap.enabled = quality.tier !== "low";
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setScissorTest(true);
+
+  // tamanho de cada tela da página, em px CSS, e a razão de pixels
+  const size = { w: 0, h: 0, fw: 0, fh: 0, dpr: 1 };
+  /** Desenha a cena num canto do buffer (do tamanho da tela de destino) e
+   *  copia esse canto para a tela 2D. O buffer tem o tamanho da maior tela;
+   *  o canto é o de baixo à esquerda (a origem do viewport do WebGL). */
+  const drawBuf = new THREE.Vector2();
+  const renderInto = (ctx, cam, w, h) => {
+    renderer.setViewport(0, 0, w, h);
+    renderer.setScissor(0, 0, w, h);
+    renderer.render(scene, cam);
+    renderer.getDrawingBufferSize(drawBuf);
+    const pw = Math.round(w * size.dpr);
+    const ph = Math.round(h * size.dpr);
+    const c = ctx.canvas;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.drawImage(renderer.domElement, 0, drawBuf.y - ph, pw, ph, 0, 0, c.width, c.height);
+  };
+  const clearFx = () => ctxFx.clearRect(0, 0, fx.width, fx.height);
   // a tela do estouro, posicionada em relação ao envelope (2,2 × 1,1)
   Object.assign(fx.style, {
     left: `${((FX.x0 + 1.1) / 2.2) * 100}%`,
@@ -214,19 +243,12 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
 
   // luz: ambiente de estúdio (o dourado do lacre precisa de reflexo) + uma
   // luz de cima à esquerda, rasante o bastante para o relevo do papel aparecer
-  // o PMREM é uma textura de GPU: cada tela (cada contexto WebGL) precisa
-  // do seu. Com um só, as telas de trás e do efeito ficavam sem reflexo do
-  // ambiente — o fundo e a aba aberta saíam bem mais escuros que o bolso
+  // com um contexto só, um PMREM serve às três telas
   const room = new RoomEnvironment();
-  const makeEnv = (r) => {
-    const pmrem = new THREE.PMREMGenerator(r);
-    const tex = pmrem.fromScene(room, 0.04).texture;
-    pmrem.dispose();
-    return tex;
-  };
-  const envBack = makeEnv(rBack);
-  const envFront = makeEnv(rFront);
-  const envFx = makeEnv(rFx);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(room, 0.04).texture;
+  pmrem.dispose();
+  scene.environment = envMap;
   room.traverse((o) => {
     o.geometry?.dispose();
     o.material?.dispose?.();
@@ -267,15 +289,20 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
     const h = front.clientHeight;
     if (!w || !h) return;
     const dpr = Math.min(window.devicePixelRatio || 1, quality.maxDpr ?? 1.5);
-    for (const r of [rBack, rFront]) {
-      r.setPixelRatio(dpr);
-      r.setSize(w, h, false);
+    const fw = fx.clientWidth;
+    const fh = fx.clientHeight;
+    Object.assign(size, { w, h, fw, fh, dpr });
+    // as telas 2D, na resolução de pixels de verdade
+    for (const c of [back, front]) {
+      c.width = Math.round(w * dpr);
+      c.height = Math.round(h * dpr);
     }
-    if (fx.clientWidth && fx.clientHeight) {
-      rFx.setPixelRatio(dpr);
-      rFx.setSize(fx.clientWidth, fx.clientHeight, false);
-      burst?.setUnitPx((fx.clientHeight * dpr * dist) / (FX.y1 - FX.y0));
-    }
+    fx.width = Math.round(fw * dpr);
+    fx.height = Math.round(fh * dpr);
+    // o buffer do WebGL cobre a maior das telas
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(Math.max(w, fw), Math.max(h, fh), false);
+    if (fw && fh) burst?.setUnitPx((fh * dpr * dist) / (FX.y1 - FX.y0));
     last.key = ""; // força redesenho
   };
 
@@ -302,18 +329,18 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
       setLayer(flapParts, deg > -90 ? LAYER_FRONT : LAYER_BACK);
       burst?.update(k, performance.now() / 1000, fm);
       stamper?.update(st);
+      // a sombra é a mesma nas três passadas: calcula uma vez por quadro
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
       camera.layers.set(LAYER_BACK);
-      scene.environment = envBack;
-      rBack.render(scene, camera);
+      renderInto(ctxBack, camera, size.w, size.h);
       camera.layers.set(LAYER_FRONT);
-      scene.environment = envFront;
-      rFront.render(scene, camera);
-      if (fxOn) {
-        scene.environment = envFx;
-        rFx.render(scene, fxCamera);
+      renderInto(ctxFront, camera, size.w, size.h);
+      if (fxOn && size.fw && size.fh) {
+        renderInto(ctxFx, fxCamera, size.fw, size.fh);
         fxDrawn = true;
       } else if (fxDrawn) {
-        rFx.clear();
+        clearFx();
         fxDrawn = false;
       }
     }
@@ -366,7 +393,7 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
         if (o.material?.normalMap) {
           o.material.normalMap.anisotropy = Math.min(
             8,
-            rFront.capabilities.getMaxAnisotropy(),
+            renderer.capabilities.getMaxAnisotropy(),
           );
         }
       });
@@ -427,13 +454,12 @@ export function mountEnvelope3D({ back, front, fx, flapEl, sealEl, onReady, onFa
     cleanups.forEach((fn) => fn());
     burst?.dispose();
     stamper?.dispose();
-    envBack.dispose();
-    envFront.dispose();
-    envFx.dispose();
+    envMap.dispose();
     key.shadow.dispose();
     ownMats.forEach((m) => m.dispose());
-    rBack.dispose();
-    rFront.dispose();
-    rFx.dispose();
+    renderer.dispose();
+    // dispose() não devolve o contexto ao navegador: sem isto, cada envio
+    // deixava um contexto WebGL pendurado até o coletor de lixo passar
+    renderer.forceContextLoss();
   };
 }
