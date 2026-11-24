@@ -285,14 +285,70 @@
    O envelope não tem transform: os pedaços se intercalam com a folha pelo
    z-index (aba aberta 0 · fundo 1 · folha 2 · bolso 3 · aba fechada 4 ·
    lacre 5). */
+/* o lacre 3D: 0 inteiro → 1 estourado em dígitos (three/sealBurst.js lê) */
+@property --seal {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+/* o lacre se formando no envio: 0 sem lacre → 1 formado (sealBurst.js lê) */
+@property --form {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+/* o carimbo do envio: 0 lacre liso (gota) → 1 carimbado (sealStamp.js lê) */
+@property --stamp {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
 @property --p {
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
 }
+/* inclinação seguindo o ponteiro (Contact.jsx escreve --tilt-x/--tilt-y,
+   já amortecidos). Fica num invólucro: o .mail tem as próprias animações de
+   transform (descer, voar, chegar) */
+.mail-tilt {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: perspective(1600px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  position: relative;
+}
+/* no envio há dois envelopes: o que sai passa por cima e o que chega vem
+   por trás, no mesmo lugar, até o antigo ir embora (Contact.jsx). O
+   z-index -1 fica dentro do contexto do .mail-tilt (o transform cria um) */
+.mail.is-next {
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+}
+/* montado (com o 3D carregando) mas ainda sem aparecer */
+.mail.is-waiting {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+/* as telas do 3D ganham visibility: visible com .has-3d (mais abaixo), o
+   que furaria o hidden herdado — aqui elas ficam escondidas também */
+.mail.is-waiting .mail__env.has-3d > .mail__gl {
+  visibility: hidden;
+}
+
 .mail {
   --p: 1;
-  --env-h: clamp(170px, 24vw, 250px);
+  /* 2:1, a proporção do modelo 3D (envelope.glb, 2,2 × 1,1): o envelope
+     ocupa a largura toda do .mail, então a altura é meia largura */
+  container-type: inline-size;
+  --env-h: 50cqw;
   --flap-shadow: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.28))
     drop-shadow(0 2px 5px rgba(0, 0, 0, 0.16));
   /* aberta, a aba fica deitada atrás: sem sombra — o contorno dela marcava
@@ -332,11 +388,15 @@
   /* o véu preto por cima deixa a trama do papel bem discreta */
   background-size: auto, auto, cover;
   background-position: center, center, center top;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  /* filete dourado: base em --gold apagado, um halo quase invisível e, no
+     ::after, um reflexo que percorre a borda devagar */
+  border: 1px solid rgba(201, 173, 114, 0.32);
   border-radius: 2px;
   box-shadow:
     0 -2px 18px rgba(0, 0, 0, 0.55),
-    inset 0 0 40px rgba(0, 0, 0, 0.6);
+    0 0 14px rgba(201, 173, 114, 0.07),
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    inset 0 0 6px rgba(201, 173, 114, 0.05);
   transform: translateY(calc(var(--p) * var(--env-h) * 0.7));
   /* corta no pé do envelope, que se move junto (folga de 40px para a sombra
      nos outros lados): com M = altura do .mail = 100% − 0,6·env-h, o pé da
@@ -350,6 +410,37 @@
 /* a folha é opaca: o "poço" escuro atrás dos campos não precisa mais */
 .mail__letter::before {
   display: none;
+}
+/* o filete metálico: faixas de luz e sombra fixas (como --gold-metal, em
+   diagonal) recortadas no 1px da borda — reflexo parado, sem animação */
+.mail__letter::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    125deg,
+    #8a7448 0%,
+    #d8c595 14%,
+    #f3e7c4 20%,
+    #b09868 32%,
+    #7d6a45 50%,
+    #c9ad72 66%,
+    #ece0bd 74%,
+    #a88f5f 86%,
+    #7d6a45 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  filter: drop-shadow(0 0 2px rgba(201, 173, 114, 0.25));
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 /* ---- o envelope ---- */
@@ -366,6 +457,47 @@
 .mail__env > * {
   position: absolute;
   display: block;
+}
+
+/* ---- o envelope 3D (three/envelope3d.js) ----
+   Duas telas com a mesma cena, uma de cada lado da folha: atrás (fundo, e a
+   aba quando aberta) e na frente (bolso, e a aba + lacre quando fechada).
+   Enquadram x ∈ [−1,15; 1,15] e y ∈ [−0,6; 1,35] do modelo (2,2 × 1,1): a
+   sobra de cima é onde fica a aba aberta. O envelope de CSS abaixo só
+   aparece com .no-3d (sem WebGL ou sem modelo) — enquanto o modelo carrega
+   não aparece nada, para não trocar de 2D para 3D na frente de ninguém. A
+   aba e o lacre dele continuam animando (invisíveis): o 3D lê o movimento. */
+.mail__gl {
+  left: -2.2727%; /* 0,05 / 2,2 */
+  width: 104.5455%; /* 2,3 / 2,2 */
+  top: -72.7273%; /* 0,8 / 1,1 da altura */
+  height: 177.2727%; /* 1,95 / 1,1 */
+  visibility: hidden;
+}
+.mail__gl--back {
+  z-index: 1;
+}
+/* a sombra que o bolso projeta na folha e no fundo */
+.mail__gl--fx {
+  z-index: 6;
+  pointer-events: none;
+}
+.mail__gl--front {
+  z-index: 4;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.22)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.14));
+}
+.mail__env.has-3d > .mail__gl {
+  visibility: visible;
+}
+.mail__env:not(.no-3d) > .mail__back,
+.mail__env:not(.no-3d) > .mail__p,
+.mail__env:not(.no-3d) > .mail__flap,
+.mail__env:not(.no-3d) > .mail__seal {
+  visibility: hidden;
+}
+/* com o 3D, os dígitos do lacre são os de sealBurst.js */
+.mail__env:not(.no-3d) > .mail__burst {
+  display: none;
 }
 /* papel branco: a textura em relevo de public/assets/paper-envelope.jpg,
    bem fraca, sobre a cor de base */
@@ -406,15 +538,17 @@
   inset: 0;
   border-radius: 3px;
 }
+/* as mesmas linhas do modelo 3D: pontas laterais a 39% / 61% da largura,
+   ponta de baixo a 45% da altura */
 .mail__p--l::before {
-  clip-path: polygon(0 0, 53% 56%, 0 100%);
+  clip-path: polygon(0 0, 39% 52%, 0 100%);
 }
 .mail__p--r::before {
-  clip-path: polygon(100% 0, 47% 56%, 100% 100%);
+  clip-path: polygon(100% 0, 61% 52%, 100% 100%);
   filter: brightness(0.95);
 }
 .mail__p--b::before {
-  clip-path: polygon(0 100%, 50% 46%, 100% 100%);
+  clip-path: polygon(0 100%, 50% 45%, 100% 100%);
   filter: brightness(1.04);
 }
 
@@ -425,7 +559,7 @@
   left: 0;
   top: 0;
   width: 100%;
-  height: 54%;
+  height: 65%; /* a ponta da aba do modelo 3D */
   z-index: 4;
   transform-origin: 50% 0;
   transform: perspective(1200px) rotateX(0deg);
@@ -469,7 +603,7 @@
    (Contact.jsx, SealMark) */
 .mail__seal {
   left: 50%;
-  top: 54%;
+  top: 63%; /* onde fica o lacre do modelo 3D, sobre a ponta da aba */
   width: 56px;
   height: 56px;
   margin: -32px 0 0 -28px;
@@ -500,7 +634,7 @@
 /* os dígitos em que o lacre se desfaz: nascem no lugar dele */
 .mail__burst {
   left: 50%;
-  top: 54%;
+  top: 63%;
   width: 0;
   height: 0;
   margin-top: -4px;
@@ -534,49 +668,64 @@
   transform: perspective(1200px) rotateX(-180deg);
   z-index: 0;
   filter: var(--flap-shadow-off) brightness(0.86);
-  animation: mail-flap 0.9s cubic-bezier(0.45, 0, 0.2, 1) 0.35s both;
+  animation: mail-flap 0.9s cubic-bezier(0.45, 0, 0.2, 1) 1.1s both;
 }
-/* o lacre não encolhe: acende e se desfaz em dígitos (.mail__burst) */
+/* o lacre carrega e estoura em dígitos. No 3D (sealBurst.js) o efeito
+   inteiro segue --seal, linear: carga até 0,4 (~0,85 s, acelerando no
+   shader), estouro, dígitos voando até 1. Sem 3D: o lacre de CSS acende
+   e some e os dígitos de .mail__burst saem no mesmo instante. */
 .mail.is-open .mail__seal {
   opacity: 0;
-  animation: mail-seal 0.4s ease-out 0.1s both;
+  --seal: 1;
+  animation:
+    mail-seal 0.85s cubic-bezier(0.55, 0, 0.9, 0.5) 0.1s both,
+    seal-k 2.1s linear 0.1s both;
 }
 .mail.is-open .mail__burst i {
-  animation: seal-bit 1.15s cubic-bezier(0.15, 0.6, 0.3, 1) calc(0.22s + var(--dl)) both;
+  animation: seal-bit 1.4s cubic-bezier(0.1, 0.75, 0.25, 1) calc(0.94s + var(--dl)) both;
 }
 /* o envelope aberto desce e a folha sai, juntos */
 .mail.is-open {
   --p: 0;
-  animation: mail-drop 1.8s cubic-bezier(0.45, 0, 0.15, 1) 1.05s both;
+  animation: mail-drop 1.8s cubic-bezier(0.45, 0, 0.15, 1) 1.8s both;
 }
 .mail.is-open .mail__letter {
-  animation: mail-letter 2.85s linear both;
+  animation: mail-letter 3.6s linear both;
 }
 
 /* ---- enviado: a carta volta, a aba fecha, o lacre se refaz ----
-   O mesmo caminho da abertura, ao contrário. Estado final = fechado. */
+   O mesmo caminho da abertura, ao contrário. Estado final = fechado.
+   As animações têm nomes próprios (-back, cópias das de abertura): com o
+   mesmo nome o navegador não reinicia a animação ao trocar .is-open por
+   .is-sealing, só inverte a que já terminou — e tudo pula para o fim. */
 .mail.is-sealing {
   --p: 1;
-  animation: mail-drop 1.4s cubic-bezier(0.45, 0, 0.15, 1) both reverse;
+  animation: mail-drop-back 1.4s cubic-bezier(0.45, 0, 0.15, 1) both reverse;
 }
 .mail.is-sealing .mail__letter {
   pointer-events: none;
 }
 .mail.is-sealing .mail__flap {
-  animation: mail-flap 0.8s cubic-bezier(0.45, 0, 0.2, 1) 1.3s both reverse;
+  animation: mail-flap-back 0.8s cubic-bezier(0.45, 0, 0.2, 1) 1.3s both reverse;
 }
 /* a aba volta ao tamanho normal quando passa de perfil */
 .mail.is-sealing .mail__flap::before,
 .mail.is-sealing .mail__flap::after {
   transition: top 0s linear 1.7s;
 }
-/* os dígitos vêm de fora e se juntam no lugar do lacre... */
+/* os dígitos chegam de todas as direções e o lacre se solidifica,
+   incandescente, e esfria (--form, 2,15 s → 3,35 s) — liso, sem logo
+   (--stamp 0). O carimbo já entra enquanto ele se forma (stamp-k,
+   2,75 s → 4,35 s) e prensa em 3,55 s, logo depois de ele ficar pronto; o
+   voo começa em 4,4 s (SENT_TIMELINE em Contact.jsx) */
 .mail.is-sealing .mail__burst i {
-  animation: seal-bit 1.1s cubic-bezier(0.7, 0, 0.85, 0.4) calc(1.9s + var(--dl)) both reverse;
+  animation: seal-bit-back 1.1s cubic-bezier(0.7, 0, 0.85, 0.4) calc(1.9s + var(--dl)) both reverse;
 }
-/* ...que acende e assenta */
 .mail.is-sealing .mail__seal {
-  animation: mail-seal 0.5s ease-in 2.6s both reverse;
+  animation:
+    mail-seal-back 0.6s cubic-bezier(0.55, 0, 0.9, 0.5) 2.75s both reverse,
+    seal-form 1.2s linear 2.15s both,
+    stamp-k 1.6s linear 2.75s both;
 }
 
 /* ---- o envelope lacrado sai voando ----
@@ -601,53 +750,26 @@
   }
 }
 
-/* ---- um envelope novo surge de 0s e 1s ----
-   Os dígitos chegam aos seus pontos e brilham; o papel aparece por baixo
-   deles e eles se apagam. "backwards": terminada a animação, o envelope
-   volta ao estilo normal (sem filtro, que quebraria o z-index da abertura). */
-.mail__assemble {
-  inset: 0;
-  z-index: 6;
-  display: none;
+/* ---- um envelope novo chega voando, já lacrado ----
+   O caminho do voo de saída, ao contrário e pelo outro lado, assentando com
+   um pequeno quique. Depois Contact.jsx põe .is-open. */
+.mail.is-arriving .mail__env {
+  animation: mail-arrive 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
-.mail.is-materializing .mail__assemble {
-  display: block;
-}
-.mail__assemble i {
-  position: absolute;
-  font-family: var(--font-mono);
-  font-style: normal;
-  font-weight: 600;
-  font-size: var(--sz, 11px);
-  line-height: 1;
-  color: #fff6dc;
-  text-shadow:
-    0 0 4px rgba(255, 226, 150, 0.95),
-    0 0 10px rgba(236, 200, 120, 0.7);
-  opacity: 0;
-  animation: env-bit 1.3s cubic-bezier(0.2, 0.7, 0.3, 1) var(--dl) both;
-}
-@keyframes env-bit {
+@keyframes mail-arrive {
   0% {
+    transform: translate(-24vw, -70vh) rotate(22deg) scale(0.55);
     opacity: 0;
-    transform: translate(calc(-50% + var(--ox)), calc(-50% + var(--oy))) scale(0.6);
   }
-  45% {
+  25% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+  }
+  82% {
+    transform: translateY(8px) rotate(-1.2deg);
   }
   100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-}
-.mail.is-materializing .mail__env > :not(.mail__assemble) {
-  animation: env-in 0.9s ease-out 0.55s backwards;
-}
-@keyframes env-in {
-  from {
-    opacity: 0;
-    filter: brightness(1.8) blur(4px);
+    transform: none;
+    opacity: 1;
   }
 }
 
@@ -656,13 +778,39 @@
     opacity: 1;
     filter: brightness(1);
   }
-  45% {
+  85% {
     opacity: 1;
-    filter: brightness(1.7) blur(0);
+    filter: brightness(1.9) blur(0);
+    transform: scale(1.08);
   }
   100% {
     opacity: 0;
-    filter: brightness(2.2) blur(3px);
+    filter: brightness(2.6) blur(4px);
+    transform: scale(1.5);
+  }
+}
+@keyframes seal-k {
+  from {
+    --seal: 0;
+  }
+  to {
+    --seal: 1;
+  }
+}
+@keyframes seal-form {
+  from {
+    --form: 0;
+  }
+  to {
+    --form: 1;
+  }
+}
+@keyframes stamp-k {
+  from {
+    --stamp: 0;
+  }
+  to {
+    --stamp: 1;
   }
 }
 @keyframes seal-bit {
@@ -722,9 +870,6 @@
 }
 
 @media (max-width: 640px) {
-  .mail {
-    --env-h: 150px;
-  }
   .mail__letter {
     width: 94%;
   }
@@ -760,4 +905,67 @@ footer::before {
     transparent
   );
   pointer-events: none;
+}
+
+/* cópias para a volta (ver .is-sealing) */
+@keyframes mail-drop-back {
+  from {
+    --p: 1;
+  }
+  to {
+    --p: 0;
+  }
+}
+@keyframes mail-flap-back {
+  0% {
+    transform: perspective(1200px) rotateX(0deg);
+    z-index: 4;
+    filter: var(--flap-shadow) brightness(1);
+  }
+  49% {
+    z-index: 4;
+    filter: var(--flap-shadow) brightness(0.6);
+  }
+  50% {
+    z-index: 0;
+    filter: var(--flap-shadow-off) brightness(0.5);
+  }
+  100% {
+    transform: perspective(1200px) rotateX(-180deg);
+    z-index: 0;
+    filter: var(--flap-shadow-off) brightness(0.86);
+  }
+}
+@keyframes mail-seal-back {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  85% {
+    opacity: 1;
+    filter: brightness(1.9) blur(0);
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(2.6) blur(4px);
+    transform: scale(1.5);
+  }
+}
+@keyframes seal-bit-back {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x0)), calc(-50% + var(--y0))) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x1)), calc(-50% + var(--y1))) scale(0.75)
+      rotate(var(--rot));
+  }
 }

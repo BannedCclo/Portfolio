@@ -40,7 +40,7 @@ export default function Work() {
             <article className="proj" key={p.seed} data-seed={p.seed}>
               <div className="proj__visual">
                 {p.shot ? (
-                  <img src={p.shot} alt="" loading="lazy" />
+                  <img src={p.shot} alt="" loading="lazy" decoding="async" />
                 ) : (
                   <ProjectArt seed={p.seed} />
                 )}

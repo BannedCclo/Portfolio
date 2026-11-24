@@ -179,11 +179,17 @@
   font-size: clamp(1.5rem, 3.3vw, 2.5rem);
   line-height: 1.32;
   max-width: 24ch;
-  color: var(--ink);
+  /* a cor das palavras, numa variável: os keyframes abaixo usam ela em vez
+     de var(--word). var(--word) dentro de @keyframes às vezes era resolvido
+     sem a cor herdada do <em> — o destaque aparecia preto e só ficava
+     dourado quando a animação terminava */
+  --word: var(--ink);
+  color: var(--word);
 }
 .tenet__text em {
   font-style: normal;
-  color: var(--gold);
+  --word: var(--gold);
+  color: var(--word);
 }
 
 /* ---------- revelação com reflexo de luz ----------
@@ -203,9 +209,9 @@
   opacity: 0;
   background-image: linear-gradient(
     100deg,
-    currentColor 0 42%,
+    var(--word) 0 42%,
     #ffffff 50%,
-    currentColor 58% 100%
+    var(--word) 58% 100%
   );
   background-size: 260% 100%;
   background-position: 100% 0;
@@ -242,7 +248,7 @@
     filter: blur(0);
     transform: translateY(0);
     background-position: 0% 0;
-    -webkit-text-fill-color: currentColor;
+    -webkit-text-fill-color: var(--word);
   }
 }
 @keyframes sheen-word {
@@ -256,7 +262,7 @@
   }
   100% {
     background-position: 0% 0;
-    -webkit-text-fill-color: currentColor;
+    -webkit-text-fill-color: var(--word);
   }
 }
 /* O hover ACRESCENTA o reflexo à lista de animações em vez de trocar a de

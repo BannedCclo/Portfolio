@@ -1,7 +1,7 @@
-import carbonShot from "../assets/projects/carbon.png";
-import f1statsShot from "../assets/projects/f1stats.png";
-import noharmShot from "../assets/projects/noharm.png";
-import physixShot from "../assets/projects/physix.png";
+import carbonShot from "../assets/projects/carbon.webp";
+import f1statsShot from "../assets/projects/f1stats.webp";
+import noharmShot from "../assets/projects/noharm.webp";
+import physixShot from "../assets/projects/physix.webp";
 
 // Projetos reais, compartilhados entre a seção Experiência (Work.jsx) e o
 // botão de projeto aleatório do footer — uma única fonte de verdade para não

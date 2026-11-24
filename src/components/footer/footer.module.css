@@ -17,9 +17,35 @@
   padding-bottom: var(--sp-7, 50px);
   color: var(--ink, #fff);
   font-family: var(--font-body, inherit);
-  /* a seção de contato acaba sobre o canvas 3D; a hairline marca onde o
-     documento volta a ser fundo sólido */
-  border-top: 1px solid var(--hairline, rgba(241, 241, 241, 0.12));
+  position: relative;
+}
+
+/* a seção de contato acaba sobre o canvas 3D; o filete dourado marca onde o
+   documento volta a ser fundo sólido. As mesmas faixas metálicas da borda
+   da carta (Contact.css, .mail__letter::after), aqui ao longo da largura,
+   com opacidade cheia e um brilho mais forte. No ::after: o ::before é a
+   sombra que o footer projeta sobre a carta (Contact.css, footer::before) */
+.footer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    #8a7448 0%,
+    #d8c595 14%,
+    #f3e7c4 20%,
+    #b09868 32%,
+    #7d6a45 50%,
+    #c9ad72 66%,
+    #ece0bd 74%,
+    #a88f5f 86%,
+    #7d6a45 100%
+  );
+  filter: drop-shadow(0 0 3px rgba(201, 173, 114, 0.55));
+  pointer-events: none;
 }
 
 /* O logo aqui é o SVG animado da marca (components/animatedLogo) — um bloco

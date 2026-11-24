@@ -69,8 +69,7 @@
   .mail__letter {
     animation: none !important;
   }
-  .mail__burst,
-  .mail__assemble {
+  .mail__burst {
     display: none;
   }
 

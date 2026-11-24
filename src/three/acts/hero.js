@@ -844,6 +844,8 @@ function update(t, dt) {
 const BEAM_PIN_START = 0.86; // progress do pin em que o cérebro começa a se desfazer
 const BEAM_ARRIVE_AT = 0.8; // altura da cabeça na tela (fração) quando as primeiras chegam
 const BEAM_END_AT = 0.35; // e quando a última entra
+// beamB a partir do qual o destino deixa de ser preso à tela (updateBeam)
+const BEAM_UNCLAMP_FROM = 0.5;
 let pinTrigger = null;
 const STARS_OPACITY = 0.35; // o valor de stage.js, restaurado ao sair
 // ponto de entrada (no cabelo), em fração da caixa do .depth-portrait — só
@@ -898,10 +900,18 @@ function updateBeam(t, head) {
   // já passou), a corrente espera na borda, onde dá para acompanhá-la — e
   // como as chegadas só começam com a cabeça visível (beamTarget em update()), ela
   // já está mirando a cabeça de verdade quando as partículas entram
+  // Mas só enquanto espera: quando as partículas começam a chegar, o destino
+  // é a cabeça de verdade, mesmo fora da tela. beamB persegue a rolagem com
+  // atraso (damp), então rolando rápido — para baixo ou para cima — a cabeça
+  // saía da faixa da trava com as partículas ainda chegando, e elas pousavam
+  // na borda da tela, desalinhadas do retrato. A trava se solta aos poucos
+  // na reta final da viagem, antes da primeira chegada (ARRIVE.start); rolando
+  // devagar a cabeça já está dentro da faixa nesse ponto e nada muda.
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const sx = Math.min(vw * 0.92, Math.max(vw * 0.08, head.x));
-  const sy = Math.min(vh * 0.86, Math.max(vh * 0.1, head.y));
+  const free = smoothstep(clamp01((beamB - BEAM_UNCLAMP_FROM) / (ARRIVE.start - BEAM_UNCLAMP_FROM)));
+  const sx = lerp(Math.min(vw * 0.92, Math.max(vw * 0.08, head.x)), head.x, free);
+  const sy = lerp(Math.min(vh * 0.86, Math.max(vh * 0.1, head.y)), head.y, free);
   beamNdc.set((sx / vw) * 2 - 1, -(sy / vh) * 2 + 1);
   beamRay.setFromCamera(beamNdc, camera);
   camera.getWorldDirection(tmpN);

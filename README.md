@@ -103,12 +103,24 @@ tools/
   bake-brain.mjs               brain.stl → public/assets/brain.glb + brain-low.glb (rodar só se a malha mudar)
 assets-source/
   brain.stl                    fonte do baker, 4,1 MB — não vai para o build
-  envelope.blend               fonte do envelope (modelado do zero, sem selo), com o normal map
-                               do relevo embutido e os nós procedurais desligados para reassar
+  envelope.blend               fonte do envelope (cantos arredondados, R = 0,03): abas do bolso com relevo damasco (normal map
+                               embutido), fundo e aba superior lisos, lacre de cera dourado com o
+                               logo (Selo_Cera, filho da aba; o logo só existe no normal map; shape
+                               key "Sem_Carimbo" = a gota lisa antes do carimbo) e o carimbo de
+                               latão com cabo preto (coleção Carimbo; a face gravada com o logo é
+                               só do .blend — no export vai um disco liso, que no site fica de costas)
+  envelope-relevo-damasco.webp imagem de origem do relevo damasco (gerada por IA)
 public/assets/
-  envelope.glb                 envelope exportado (750 KB): aba superior abre pela dobra, animação
-                               "Envelope_Abrir" (0° → −170° no eixo X); relevo em normal map WebP
-                               (EXT_texture_webp)
+  envelope.glb                 envelope + carimbo exportados (1,15 MB): aba superior + lacre abrem
+                               pela dobra, animação "Envelope_Abrir" (0° → −170° no eixo X); morph
+                               Sem_Carimbo no lacre; normal maps em WebP (EXT_texture_webp).
+                               Desenhado por three/envelope3d.js em três telas (atrás/na frente da
+                               folha do formulário, e uma maior por cima para o lacre estourando em
+                               0s e 1s — sealBurst.js — e o carimbo moldando o lacre no envio —
+                               sealStamp.js). Tudo segue o ângulo da aba e as variáveis --seal,
+                               --form e --stamp do lacre de CSS — a coreografia fica em Contact.css.
+                               O volume vem do three: sombras reais da luz principal (desligadas no
+                               tier low) e o papel "estufado" só na normal (BULGE em envelope3d.js)
   brain.glb                    malha completa (1,2 MB)
   brain-low.glb                malha reduzida (270 KB), escolhida pelo tier de qualidade
                                (tipo de ponteiro) — ver three/stage.js e acts/hero.js

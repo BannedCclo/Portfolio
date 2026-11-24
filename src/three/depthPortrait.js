@@ -565,7 +565,9 @@ export async function createDepthPortrait({
   function fit() {
     const w = Math.max(1, host.clientWidth);
     const h = Math.max(1, host.clientHeight);
-    const dpr = Math.min(window.devicePixelRatio || 1, low ? 1.5 : 2);
+    // teto de 1,5× também no desktop: com antialias ligado, 2× quase dobrava
+    // o custo de pixel sem diferença visível no retrato
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     renderer.getDrawingBufferSize(resolution);

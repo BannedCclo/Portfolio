@@ -19,7 +19,7 @@
    (Work.css) recorta o card até essa altura e desenha a linha de impressão.
    =========================================================== */
 
-import { clamp01, damp, isNear, smoothstep } from "./motion.js";
+import { clamp01, damp, isNearRect, smoothstep } from "./motion.js";
 import { onTick } from "./ticker.js";
 
 const reduceMotion = window.matchMedia(
@@ -172,12 +172,31 @@ export function initBinaryFlow() {
   let progress = 0;
   let drawnEmpty = true;
   let emPx = 16;
-  const measureEm = () => {
+  // centro de cada marco ao longo do trilho (offsetTop + 0.5em + metade dos
+  // 7px do ponto). Medido só quando o layout muda (resize, fontes): lido a
+  // cada quadro, logo depois de escrever --fill, offsetTop forçava o
+  // navegador a refazer o layout inteiro
+  let markY = [];
+  const measure = () => {
     emPx = parseFloat(getComputedStyle(timeline).fontSize) || 16;
+    markY = marks.map((m) => m.offsetTop + 0.5 * emPx + 3.5);
   };
-  measureEm();
-  window.addEventListener("resize", measureEm);
+  measure();
+  window.addEventListener("resize", measure);
+  const ro = new ResizeObserver(measure);
+  ro.observe(timeline);
+  const desktopMql = window.matchMedia(DESKTOP_QUERY);
   const forms = new Array(cards.length).fill(-1);
+  // últimos valores escritos nas variáveis do trilho: só reescreve o que
+  // mudou, para não invalidar o estilo à toa a cada quadro
+  const wrapVars = { "--fill": "", "--drain": "", "--unzip": "", "--pulse-alpha": "" };
+  const setWrapVar = (k, v) => {
+    if (wrapVars[k] === v) return;
+    wrapVars[k] = v;
+    wrap.style.setProperty(k, v);
+  };
+  // assinatura do último quadro desenhado: igual → o canvas já está certo
+  let lastKey = "";
 
   /** Avança o sinal um quadro. O damp() de sempre, com um teto de
    *  velocidade só na parte da corrente (1..2): rolando rápido, a formação
@@ -209,7 +228,7 @@ export function initBinaryFlow() {
   function flowTarget(tlRect, pinRect, trackRect) {
     const start = h * 0.6 - tlRect.bottom; // > 0 depois que a linha completa
     if (start <= 0) return 0;
-    const gap = window.matchMedia(DESKTOP_QUERY).matches
+    const gap = desktopMql.matches
       ? pinRect.top
       : trackRect.top - h * 0.3;
     if (gap <= 0) return 1;
@@ -323,35 +342,54 @@ export function initBinaryFlow() {
   }
 
   const unsubscribeTick = onTick((dt) => {
-    if (!isNear(work, 0.6) && !isNear(timeline, 0.4)) {
+    /* Todas as leituras de layout primeiro, todas as escritas depois: ler
+       um rect logo após escrever uma variável CSS obriga o navegador a
+       recalcular o layout no meio do quadro. */
+    const workRect = work.getBoundingClientRect();
+    const tlRect = timeline.getBoundingClientRect();
+    if (!isNearRect(workRect, 0.6) && !isNearRect(tlRect, 0.4)) {
       if (!drawnEmpty) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawnEmpty = true;
       }
+      lastKey = "";
       return;
     }
-    fit();
-
-    const tlRect = timeline.getBoundingClientRect();
     const pinRect = pin.getBoundingClientRect();
     const trackRect = track.getBoundingClientRect();
+    const rects = cards.map((c) => c.getBoundingClientRect());
+    const scrollY = window.scrollY;
+    fit();
+
     // onde a trava segura a página: o mesmo ponto em que o alvo do sinal
     // chega a 2 (targetSignal) — começo do pin no desktop (topo da seção,
     // que o pin não move) ou a faixa de cards a 30% da tela no celular
-    lockY = window.matchMedia(DESKTOP_QUERY).matches
-      ? work.getBoundingClientRect().top + window.scrollY
-      : trackRect.top - h * 0.3 + window.scrollY;
+    lockY = desktopMql.matches
+      ? workRect.top + scrollY
+      : trackRect.top - h * 0.3 + scrollY;
     const target = targetSignal(tlRect, pinRect, trackRect);
     signal = stepSignal(signal, target, dt);
     progress = clamp01(signal - 1);
 
     // cards alvo: os que aparecem na tela com a galeria no início (x = 0)
-    const rects = cards.map((c) => c.getBoundingClientRect());
     const targets = [];
     rects.forEach((r, i) => {
       const local = r.left - trackRect.left;
       if (local < w && targets.length < MAX_TARGETS) targets.push(i);
     });
+
+    // nada mudou desde o último quadro (sinal parado, nada se mexeu na
+    // tela): o canvas, as variáveis e os cards já estão certos
+    let key = `${signal.toFixed(5)}|${tlRect.top}|${tlRect.left}|${tlRect.height}|${w}|${h}|${dpr}`;
+    for (const i of targets) {
+      const r = rects[i];
+      key += `|${r.left}|${r.top}|${r.width}|${r.height}`;
+    }
+    if (key === lastKey) {
+      stepLanding(dt);
+      return;
+    }
+    lastKey = key;
 
     // o trilho e a ponta brilhante (About.css): a ponta corre com o
     // preenchimento e, no fim, dá lugar à coluna de dígitos (--unzip)
@@ -365,19 +403,19 @@ export function initBinaryFlow() {
     const emitEnd = (Math.max(1, targets.length) - 1) * CARD_STAGGER + V_SPAN + 0.02;
     const drain = clamp01(progress / emitEnd);
     const unzip = smoothstep(progress / 0.05) * (1 - smoothstep((drain - 0.8) / 0.2));
-    wrap.style.setProperty("--fill", fill.toFixed(4));
+    setWrapVar("--fill", fill.toFixed(4));
     // ponta do preenchimento, a partir do topo do trilho (About.css:
-    // top 0.6em, altura fill × (100% − 1.2em)); o centro de cada ponto em
-    // offsetTop (sem o translateY do reveal) + top 0.5em + metade dos 7px
+    // top 0.6em, altura fill × (100% − 1.2em)); o centro de cada ponto vem
+    // de markY (offsetTop, sem o translateY do reveal, medido em measure())
     const tipY = 0.6 * emPx + fill * (tlRect.height - 1.2 * emPx);
-    for (const m of marks) {
-      const lit = fill > 0 && tipY >= m.offsetTop + 0.5 * emPx + 3.5 - 0.5;
+    marks.forEach((m, i) => {
+      const lit = fill > 0 && tipY >= markY[i] - 0.5;
       if (lit !== m.classList.contains("is-lit")) m.classList.toggle("is-lit", lit);
-    }
-    wrap.style.setProperty("--drain", drain.toFixed(4));
-    wrap.style.setProperty("--unzip", unzip.toFixed(3));
+    });
+    setWrapVar("--drain", drain.toFixed(4));
+    setWrapVar("--unzip", unzip.toFixed(3));
     // a ponta brilhante só corre pela linha; ao fim, quem brilha são os dígitos
-    wrap.style.setProperty("--pulse-alpha", signal > 0.004 && progress < 0.02 ? 1 : 0);
+    setWrapVar("--pulse-alpha", signal > 0.004 && progress < 0.02 ? "1" : "0");
 
     // contagem de dígitos pousados por card alvo
     const landed = new Array(MAX_TARGETS).fill(0);
@@ -510,7 +548,8 @@ export function initBinaryFlow() {
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("pointerdown", markInput);
     window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", measureEm);
+    window.removeEventListener("resize", measure);
+    ro.disconnect();
     ["--fill", "--drain", "--unzip", "--pulse-alpha"].forEach((k) => wrap.style.removeProperty(k));
     marks.forEach((m) => m.classList.remove("is-lit"));
     canvas.remove();

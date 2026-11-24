@@ -1,13 +1,11 @@
-/* Cópia do módulo compartilhado Assets/Footer, com a cor da marca: o traço é
-   `currentColor` (herda o --ink do footer) e o brilho segue o mesmo tom, mais
-   contido que o branco puro do original para não estourar sobre o quase-preto
-   do site. */
+/* Cópia do módulo compartilhado Assets/Footer, com a cor da marca: o traço
+   é um gradiente metálico (o <linearGradient> em signature.tsx), como ouro
+   líquido. Sem halo: só uma sombra curta embaixo, que dá volume ao traço
+   em vez de fazê-lo brilhar. */
 .signatureSvg {
-    color: var(--ink, #fff);
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    filter: drop-shadow(0 0 2px var(--ink, #fff))
-        drop-shadow(0 0 12px rgba(241, 241, 241, 0.35));
+    filter: drop-shadow(0 1.5px 1px rgba(0, 0, 0, 0.6));
 }
 
 .signatureSvg.animate {

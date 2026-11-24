@@ -144,7 +144,10 @@ img {
   pointer-events: none;
   opacity: 0.035;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  /* o mesmo ruído de antes (feTurbulence fractalNoise, baseFrequency 0.85,
+     3 oitavas, ladrilho de 140px), pré-renderizado num PNG: o navegador não
+     precisa rodar o filtro SVG */
+  background-image: url("/assets/grain.png");
 }
 
 /* ---------- nav ---------- */

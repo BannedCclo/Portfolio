@@ -170,13 +170,25 @@ export function initWork() {
       trigger.kill();
       targetX = 0;
       x = 0;
+      appliedX = 0;
       track.style.transform = "";
     };
   });
 
-  const unsubscribeTick = onTick((dt) => {
-    if (!isNear(section, 0.5)) return;
+  // valores já escritos em cada card: só reescreve o que mudou
+  const written = new Map(cards.map((c) => [c, { focus: "", tx: "", ty: "" }]));
+  // o x que está aplicado no transform da faixa agora
+  let appliedX = 0;
 
+  const unsubscribeTick = onTick((dt) => {
+    /* Leituras primeiro, escritas depois: antes, cada card lia o próprio
+       rect logo depois de o anterior escrever --focus/--tilt, e o navegador
+       recalculava o layout uma vez por card a cada quadro. */
+    if (!isNear(section, 0.5)) return;
+    const rects = cards.map((c) => c.getBoundingClientRect());
+    const mid = window.innerWidth / 2;
+
+    let dx = 0;
     if (isDesktop()) {
       // Enquanto os cards ainda se formam a partir dos dígitos que descem da
       // linha do tempo (lib/binaryFlow.js marca data-cards-ready="0"), a
@@ -185,24 +197,35 @@ export function initWork() {
       // ou o efeito não montou), anda normalmente.
       const cardsReady = section.dataset.cardsReady !== "0";
       x = damp(x, cardsReady ? targetX : 0, dt, 3.4);
-      track.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
+      const tx = x.toFixed(2);
+      // os rects acima foram lidos com o transform anterior: compensa o
+      // quanto a faixa anda neste quadro
+      dx = Number(tx) - appliedX;
+      if (dx !== 0) {
+        track.style.transform = `translate3d(${tx}px,0,0)`;
+        appliedX = Number(tx);
+      }
     }
 
     // depth falloff: cards nearest the centre of the screen sit forward and
     // at full opacity, the rest recede — motion on three properties at once
     // rather than a flat slide
-    const mid = window.innerWidth / 2;
-    for (const card of cards) {
-      const r = card.getBoundingClientRect();
-      const d = Math.abs(r.left + r.width / 2 - mid) / mid;
-      card.style.setProperty("--focus", clamp01(1 - d * 0.55).toFixed(3));
+    cards.forEach((card, i) => {
+      const r = rects[i];
+      const d = Math.abs(r.left + dx + r.width / 2 - mid) / mid;
+      const focus = clamp01(1 - d * 0.55).toFixed(3);
 
       const t = tilt.get(card);
       t.x = damp(t.x, t.tx, dt, 6);
       t.y = damp(t.y, t.ty, dt, 6);
-      card.style.setProperty("--tilt-x", t.x.toFixed(2));
-      card.style.setProperty("--tilt-y", t.y.toFixed(2));
-    }
+      const tiltX = t.x.toFixed(2);
+      const tiltY = t.y.toFixed(2);
+
+      const w = written.get(card);
+      if (w.focus !== focus) card.style.setProperty("--focus", (w.focus = focus));
+      if (w.tx !== tiltX) card.style.setProperty("--tilt-x", (w.tx = tiltX));
+      if (w.ty !== tiltY) card.style.setProperty("--tilt-y", (w.ty = tiltY));
+    });
   });
 
   return () => {
