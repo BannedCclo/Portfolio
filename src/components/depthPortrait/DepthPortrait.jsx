@@ -12,7 +12,8 @@ const urls = { head: headUrl, body: bodyUrl, hand: handUrl, depth: depthUrl };
 
 /**
  * Retrato recortado com volume (camadas cabeça/corpo/mão em paralaxe — ver
- * three/depthPortrait.js). Começa como um <img> comum (o próprio recorte,
+ * three/depthPortrait.js; no celular e no tablet, sem mouse, a foto fica
+ * parada, só com a luz e o feixe). Começa como um <img> comum (o próprio recorte,
  * mesmo enquadramento) e troca para o <canvas> 3D assim que o primeiro quadro
  * existe — sem salto de layout, e com fallback automático: sem WebGL, ou com
  * prefers-reduced-motion, a imagem plana simplesmente fica.
@@ -73,7 +74,11 @@ export default function DepthPortrait({ alt }) {
         if (disposed) return;
         // o mouse só move a órbita dentro da coluna da bio (retrato + texto)
         const region = host.closest(".about__bio") ?? host;
-        const e = await createDepthPortrait({ canvas, host, manifest, urls, region });
+        // celular e tablet (sem mouse): foto parada, sem a órbita — a luz de
+        // trás e o feixe entrando na cabeça continuam, redesenhados só quando
+        // mudam (three/depthPortrait.js)
+        const parallax = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        const e = await createDepthPortrait({ canvas, host, manifest, urls, region, parallax });
         if (disposed) {
           e.dispose();
           return;

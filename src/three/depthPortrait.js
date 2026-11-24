@@ -18,6 +18,12 @@
    Ciclo de vida: o componente cria o motor, liga/desliga o loop conforme a
    seção aparece na tela (start/stop) e chama dispose() ao desmontar. O loop
    nunca roda fora da tela.
+
+   Sem paralaxe (`parallax: false`, celular e tablet): a foto fica parada na
+   pose de repouso, e o quadro só é redesenhado quando algo muda. O feixe
+   entrando na cabeça (pela rolagem) é desenhado a cada quadro em que muda; a
+   luz de trás continua animada, mas a STILL_LIGHT_FPS: o movimento dela é
+   lento, e é o shader mais caro do retrato.
    =========================================================== */
 
 import * as THREE from "three";
@@ -45,6 +51,11 @@ const MAX_PITCH = deg(5);
 // vai-e-vem lento que mantém vivo em telas sem mouse
 const IDLE_YAW = deg(4.5);
 const IDLE_PITCH = deg(2.4);
+// sem paralaxe: quadros por segundo da luz de trás animada. Os feixes, a
+// névoa e o balanço da lâmpada andam devagar (a cintilação, ~2% de
+// amplitude): a 20 fps cada passo é uma fração de pixel, sem diferença
+// visível para os 60 (ou 120) de antes
+const STILL_LIGHT_FPS = 20;
 
 // Luz quente vindo de baixo, por trás da figura: um plano atrás das camadas
 // (LIGHT.depth), então ganha paralaxe na órbita e atravessa os fios
@@ -385,10 +396,12 @@ function loadTexture(url, { mipmaps }) {
  *                       layers: { name: string, x: number, y: number,
  *                                 w: number, h: number }[] },
  *           urls: Record<string, string>, animate?: boolean,
- *           region?: HTMLElement }} opts
+ *           parallax?: boolean, region?: HTMLElement }} opts
  *   `urls` tem uma entrada por camada (`head`, `body`, `hand`) e `depth`.
  *   `region`: área onde o ponteiro move a órbita (padrão: o próprio host).
  *   `animate: false` desenha um único quadro em repouso.
+ *   `parallax: false` deixa a foto parada na pose de repouso (sem órbita),
+ *   com a luz e o feixe, redesenhando só quando algo muda.
  */
 export async function createDepthPortrait({
   canvas,
@@ -396,6 +409,7 @@ export async function createDepthPortrait({
   manifest,
   urls,
   animate = true,
+  parallax = true,
   region = host,
 }) {
   const { width: W, height: H } = manifest;
@@ -464,7 +478,10 @@ export async function createDepthPortrait({
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
-    antialias: true,
+    // Parada, nenhuma aresta de geometria aparece (o contorno de cada camada
+    // vem do alfa da textura; a luz e o feixe se apagam antes da borda do
+    // plano): o MSAA só custaria memória e banda, sem mudar um pixel
+    antialias: parallax,
     powerPreference: "high-performance",
   });
   renderer.setClearColor(0x000000, 0);
@@ -582,6 +599,9 @@ export async function createDepthPortrait({
 
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.01, 20);
   let camDist = 3;
+  // sem paralaxe: o próximo quadro tem de ser desenhado mesmo sem nada ter
+  // mudado (setSize zera o canvas; ao voltar para a tela)
+  let dirty = true;
 
   /** "cover": o quadro preenche o host como object-fit: cover faria */
   function fit() {
@@ -603,6 +623,7 @@ export async function createDepthPortrait({
       x: 0.5 + entry.x / (visH * camera.aspect),
       y: 0.5 - entry.y / visH,
     };
+    dirty = true;
   }
   fit();
   const ro = new ResizeObserver(fit);
@@ -636,7 +657,7 @@ export async function createDepthPortrait({
     ty = 0;
     lastMove = -1e9;
   };
-  if (animate) {
+  if (animate && parallax) {
     region.addEventListener("pointermove", onPointerMove);
     region.addEventListener("pointerleave", onPointerLeave);
   }
@@ -644,7 +665,7 @@ export async function createDepthPortrait({
   // raio X ao passar o mouse na cabeça: só com mouse e com animação
   const headLayer = manifest.layers.find((l) => l.name === "head");
   const xray =
-    animate && hasHover && headLayer
+    animate && parallax && hasHover && headLayer
       ? createXrayLens({
           scene,
           shared,
@@ -669,7 +690,42 @@ export async function createDepthPortrait({
     renderer.render(scene, camera);
   }
 
+  /* Sem paralaxe. Quadro só quando algo muda: a luz de trás (acesa e
+     animada) a cada 1/STILL_LIGHT_FPS s, o resto (o quanto a luz está acesa,
+     o brilho na cabeça, o feixe entrando — tudo pela rolagem) assim que
+     muda. Com a luz apagada (até o feixe chegar) e a rolagem parada, nada é
+     desenhado; o canvas continua mostrando o último quadro. */
+  let stillKey = "";
+  let lightT = -1e9;
+  function drawStill(t) {
+    const gain = LIGHT.gain * portraitLightGain();
+    const glow = portraitHeadGlow();
+    const { beam, level, dir } = portraitLight;
+    inflow?.update(beam, level, dir);
+    // Só o que aparece na imagem: fora da janela de chegada o progresso do
+    // feixe e a direção dele não mudam nenhum pixel (o ponto de entrada está
+    // apagado; luz e brilho já entram por gain e glow) — e o progresso segue
+    // a rolagem com amortecimento, mexendo nas últimas casas por um tempo
+    const aim = inflow?.group.visible
+      ? `${beam}|${level}|${dir ? `${dir.x.toFixed(4)},${dir.y.toFixed(4)}` : ""}`
+      : "";
+    const key = `${gain}|${glow}|${aim}`;
+    const lightDue = gain > 0 && t - lightT >= 1 / STILL_LIGHT_FPS - 0.004;
+    if (!dirty && key === stillKey && !lightDue) return;
+    stillKey = key;
+    lightT = t;
+    dirty = false;
+    shared.uTime.value = t;
+    shared.uLightGain.value = gain;
+    shared.uHeadGlow.value = glow;
+    place();
+  }
+
   function draw(t, dt) {
+    if (!parallax) {
+      drawStill(t);
+      return;
+    }
     const pointerActive = performance.now() - lastMove < 2500;
     sway = damp(sway, hasHover ? 0 : pointerActive ? 0.25 : 1, dt, 1.2);
     const tYaw = tx * MAX_YAW + Math.sin(t * 0.5) * IDLE_YAW * sway;
@@ -728,6 +784,7 @@ export async function createDepthPortrait({
     start() {
       if (!animate || raf) return;
       last = 0;
+      dirty = true;
       raf = requestAnimationFrame(loop);
     },
     stop() {

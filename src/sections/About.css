@@ -369,6 +369,20 @@ a.tl__institution:focus-visible {
   -webkit-text-fill-color: var(--ink);
   border-color: var(--ink);
 }
+/* Ainda cifrado (lib/bioDecode.js): o dourado metálico é um gradiente
+   recortado no formato das letras (background-clip: text, styles/base.css),
+   e esse recorte inclui as letras dos .bio__ch mesmo com a cor transparente —
+   o nome aparecia pronto no meio dos dígitos, e o dígito por cima, herdando
+   o preenchimento transparente, sumia. Enquanto algum caractere não virou
+   letra, o nome fica sem o gradiente: os dígitos aparecem como no resto do
+   texto e as letras já decodificadas, em dourado liso; com a última, volta o
+   metal. O sublinhado do link só aparece no fim, para não entregar o nome. */
+.tl__institution:has(.bio__ch:not(.is-on)) {
+  background-image: none;
+  color: var(--gold);
+  -webkit-text-fill-color: currentcolor;
+  border-bottom-color: transparent;
+}
 
 .tl {
   opacity: 0;
