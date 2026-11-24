@@ -938,7 +938,13 @@ function updateBeam(t, head) {
   if (len > 1) portraitLight.dir = { x: (px - sx) / len, y: (py - sy) / len };
   u.uTime.value = t;
   u.uPixelRatio.value = Math.min(window.devicePixelRatio || 1, quality.maxDpr);
-  beamOverlay.render(beamPoints, camera);
+  // Passado o pin do hero, o canvas do feixe rola junto com a página entre um
+  // quadro e outro (ancorado no scrollY deste quadro — beamOverlay.js): a
+  // ponta fica colada na cabeça do retrato mesmo rolando rápido no celular.
+  // Durante o pin o conteúdo fica parado, então o canvas também fica fixo.
+  const scrollTop = window.scrollY;
+  const pastPin = !!pinTrigger && scrollTop > pinTrigger.end;
+  beamOverlay.render(beamPoints, camera, pastPin ? scrollTop : null);
 }
 
 /** Reduced-motion path: a fixed top-down pose, the title card and first text

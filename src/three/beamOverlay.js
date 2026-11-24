@@ -59,15 +59,43 @@ export function createBeamOverlay(quality) {
 
   let drawn = false;
 
+  /* Ancorado no documento ou fixo na tela.
+     Fixo (o normal), o canvas fica parado enquanto a página rola, e o desenho
+     só acompanha no próximo quadro do JS. No celular a rolagem roda no
+     compositor, bem à frente do JS: rolando rápido, o retrato andava dezenas
+     de px antes de o feixe ser redesenhado, e a ponta descolava da cabeça.
+     Ancorado, o canvas é posto no documento exatamente onde estava a tela
+     quando o quadro foi desenhado (translateY = scrollY daquele quadro):
+     entre um quadro e outro o compositor rola o canvas junto com o retrato,
+     e a ponta continua colada na cabeça. */
+  let anchored = null;
+  function anchor(docY) {
+    if (docY == null) {
+      if (anchored === null) return;
+      anchored = null;
+      Object.assign(canvas.style, { position: "", inset: "", height: "", transform: "" });
+      return;
+    }
+    if (anchored === null) {
+      Object.assign(canvas.style, { position: "absolute", inset: "0 auto auto 0" });
+    }
+    canvas.style.height = `${h}px`;
+    if (docY !== anchored) canvas.style.transform = `translate3d(0, ${docY}px, 0)`;
+    anchored = docY;
+  }
+
   return {
     renderer,
     /**
      * Desenha só as partículas, com a câmera do palco neste quadro.
      * @param {THREE.Object3D} points (já com o matrixWorld do quadro)
      * @param {THREE.Camera} camera
+     * @param {number | null} [docY] scrollY deste quadro para ancorar o
+     *   canvas no documento; null/omitido = fixo na tela
      */
-    render(points, camera) {
+    render(points, camera, docY = null) {
       fit();
+      anchor(docY);
       const saved = camera.layers.mask;
       camera.layers.set(BEAM_LAYER);
       renderer.render(points, camera);

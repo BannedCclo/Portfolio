@@ -543,7 +543,19 @@
   .work__track::-webkit-scrollbar {
     display: none;
   }
+  /* todos os cards com a altura do mais alto (stretch, em vez do center
+     de cima); quem absorve a sobra é a imagem — cresce além dos 16:9
+     (object-fit: cover recorta) — e o texto fica do tamanho dele */
+  .work__track {
+    align-items: stretch;
+  }
   .proj {
     scroll-snap-align: start;
+  }
+  .proj__visual {
+    flex: 1 0 auto;
+  }
+  .proj__body {
+    flex: 0 0 auto;
   }
 }
